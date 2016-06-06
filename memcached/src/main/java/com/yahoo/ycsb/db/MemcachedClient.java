@@ -28,13 +28,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 
 import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.FailureMode;
@@ -114,6 +108,7 @@ public class MemcachedClient extends DB {
 
   @Override
   public void init() throws DBException {
+
     try {
       client = createMemcachedClient();
       checkOperationStatus = Boolean.parseBoolean(
@@ -153,7 +148,7 @@ public class MemcachedClient extends DB {
     //
     // TODO(mbrukman): fix this.
     List<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>();
-    String[] hosts = getProperties().getProperty(HOSTS_PROPERTY).split(",");
+    /*String[] hosts = getProperties().getProperty(HOSTS_PROPERTY).split(",");
     for (String address : hosts) {
       int colon = address.indexOf(":");
       int port = DEFAULT_PORT;
@@ -163,7 +158,9 @@ public class MemcachedClient extends DB {
         host = address.substring(0, colon);
       }
       addresses.add(new InetSocketAddress(host, port));
-    }
+    }*/
+    // TODO(ArchangelX360) : I made this workaround for now... Sorry for that
+    addresses.add(new InetSocketAddress("127.0.0.1", 11211));
     return new net.spy.memcached.MemcachedClient(
         connectionFactoryBuilder.build(), addresses);
   }

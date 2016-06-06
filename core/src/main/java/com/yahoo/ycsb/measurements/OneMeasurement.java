@@ -33,6 +33,12 @@ public abstract class OneMeasurement {
   private final String _name;
   private  final ConcurrentHashMap<Status, AtomicInteger> _returncodes;
 
+  // TODO(archangelx360) : the following is a workaround for serialization to reconsider
+  public OneMeasurement() {
+    this._name = "";
+    this._returncodes = new ConcurrentHashMap<Status, AtomicInteger>();
+  }
+
   public String getName() {
     return _name;
   }

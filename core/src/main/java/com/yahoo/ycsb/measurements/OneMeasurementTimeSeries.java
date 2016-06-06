@@ -18,6 +18,7 @@
 package com.yahoo.ycsb.measurements;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Vector;
 import java.util.Properties;
 import java.text.DecimalFormat;
@@ -26,8 +27,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.yahoo.ycsb.measurements.exporter.MeasurementsExporter;
 
-class SeriesUnit
+class SeriesUnit implements Serializable
 {
+
+  // TODO(archangelx360) : the following is a workaround for serialization to reconsider
+  public SeriesUnit(){
+
+  }
+
   /**
    * @param time
    * @param average
@@ -43,7 +50,7 @@ class SeriesUnit
 /**
  * A time series measurement of a metric, such as READ LATENCY.
  */
-public class OneMeasurementTimeSeries extends OneMeasurement
+public class OneMeasurementTimeSeries extends OneMeasurement implements Serializable
 {
 
   /**
@@ -68,6 +75,11 @@ public class OneMeasurementTimeSeries extends OneMeasurement
 
   int min=-1;
   int max=-1;
+
+  // TODO(archangelx360) : the following is a workaround for serialization to reconsider
+  public OneMeasurementTimeSeries(){
+    super();
+  }
 
   public OneMeasurementTimeSeries(String name, Properties props)
   {

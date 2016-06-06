@@ -32,10 +32,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.yahoo.ycsb.measurements.OneMeasurement;
 import org.apache.htrace.core.Tracer;
 import org.apache.htrace.core.TraceScope;
 import org.apache.htrace.core.HTraceConfiguration;
@@ -352,6 +357,69 @@ class RemainingFormatter {
 }
 
 /**
+ * A thread to periodically feed a Hazelcast DB with measurements.
+ * Hazelcast exposes a RestAPI to communicate with the frontend.
+ *
+ * @author archangelx360
+ */
+class HazelcastThread extends Thread
+{
+  private ConcurrentMap<String, OneMeasurement> _measurementStorageMap;
+
+  /**
+   * Creates a new HazelcastThread.
+   *
+   */
+  public HazelcastThread()
+  {
+    Config config = new Config();
+    config.setProperty("hazelcast.rest.enabled", "true");
+    HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+    _measurementStorageMap = h.getMap("test");
+  }
+
+  /**
+   * Run and periodically fill storage DB for frontend.
+   */
+  @Override
+  public void run()
+  {
+    boolean alldone = false;
+    boolean benchmarkDone = false;
+    int timeToWait = 200;
+    CountDownLatch countDownLatch = new CountDownLatch(1);
+    do {
+      if (!benchmarkDone) {
+        ConcurrentMap<String, OneMeasurement> opToMesurementMap = Measurements.getMeasurements().get_opToMesurementMap();
+        for (String key : _measurementStorageMap.keySet()) {
+          _measurementStorageMap.replace(key, opToMesurementMap.get(key));
+        }
+        for (String key : opToMesurementMap.keySet()) {
+          _measurementStorageMap.putIfAbsent(key, opToMesurementMap.get(key));
+        }
+      } else {
+        timeToWait = 5000;
+        System.err.println("Awaiting clients...");
+        /*Gson gson = new Gson();
+        String json = gson.toJson(_measurementStorageMap);
+        System.err.println(json);*/
+      }
+      try {
+        countDownLatch.await(timeToWait, TimeUnit.MILLISECONDS);
+      }
+      catch( InterruptedException ie) {
+        //Thread.currentThread().interrupt();
+        System.err.println("It's HAZELCAST TIME !");
+        benchmarkDone=true;
+      }
+
+      // TODO : find a proper way to stop this program.
+    } while (!alldone);
+  }
+
+}
+
+/**
  * A thread for executing transactions or data inserts to the database.
  *
  * @author cooperb
@@ -605,6 +673,9 @@ public class Client
 
   /** An optional thread used to track progress and measure JVM stats. */
   private static StatusThread statusthread = null;
+
+  /** An optional thread used to use a Web measurement visualization progress. */
+  private static HazelcastThread hazelcastthread = null;
 
   // HTrace integration related constants.
 
@@ -1099,6 +1170,12 @@ public class Client
       statusthread.start();
     }
 
+    boolean frontend = true;
+    if (frontend) {
+      hazelcastthread=new HazelcastThread();
+      hazelcastthread.start();
+    }
+
     Thread terminator = null;
     long st;
     long en;
@@ -1156,6 +1233,17 @@ public class Client
           // at this point we assume all the monitored threads are already gone as per above join loop.
           try {
             statusthread.join();
+          } catch (InterruptedException e) {
+          }
+        }
+
+        if (frontend)
+        {
+          // wake up status thread if it's asleep
+          hazelcastthread.interrupt();
+          // at this point we assume all the monitored threads are already gone as per above join loop.
+          try {
+            hazelcastthread.join();
           } catch (InterruptedException e) {
           }
         }
