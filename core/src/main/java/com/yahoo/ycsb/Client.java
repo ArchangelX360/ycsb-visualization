@@ -32,15 +32,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.yahoo.ycsb.measurements.OneMeasurement;
+import com.yahoo.ycsb.frontend.Handler;
+import com.yahoo.ycsb.frontend.RestAPIThread;
+
 import org.apache.htrace.core.Tracer;
 import org.apache.htrace.core.TraceScope;
 import org.apache.htrace.core.HTraceConfiguration;
@@ -61,10 +58,10 @@ class StatusThread extends Thread
 
   /** Stores the measurements for the run. */
   private final Measurements _measurements;
-  
+
   /** Whether or not to track the JVM stats per run */
   private final boolean _trackJVMStats;
-  
+
   /** The clients that are running. */
   private final List<ClientThread> _clients;
 
@@ -98,7 +95,7 @@ class StatusThread extends Thread
   {
     this(completeLatch, clients, label, standardstatus, statusIntervalSeconds, false);
   }
-  
+
   /**
    * Creates a new StatusThread.
    *
@@ -121,7 +118,7 @@ class StatusThread extends Thread
     _measurements = Measurements.getMeasurements();
     _trackJVMStats = trackJVMStats;
   }
-  
+
   /**
    * Run and periodically report status.
    */
@@ -141,7 +138,7 @@ class StatusThread extends Thread
       long nowMs=System.currentTimeMillis();
 
       lastTotalOps = computeStats(startTimeMs, startIntervalMs, nowMs, lastTotalOps);
-      
+
       if (_trackJVMStats) {
         measureJVM();
       }
@@ -252,9 +249,9 @@ class StatusThread extends Thread
       _maxThreads = threads;
     }
     _measurements.measure("THREAD_COUNT", threads);
-    
+
     // TODO - once measurements allow for other number types, switch to using
-    // the raw bytes. Otherwise we can track in MB to avoid negative values 
+    // the raw bytes. Otherwise we can track in MB to avoid negative values
     // when faced with huge heaps.
     final int usedMem = Utils.getUsedMemoryMegaBytes();
     if (usedMem < _minUsedMem) {
@@ -264,7 +261,7 @@ class StatusThread extends Thread
       _maxUsedMem = usedMem;
     }
     _measurements.measure("USED_MEM_MB", usedMem);
-    
+
     // Some JVMs may not implement this feature so if the value is less than
     // zero, just ommit it.
     final double systemLoad = Utils.getSystemLoadAverage();
@@ -278,7 +275,7 @@ class StatusThread extends Thread
         _minLoadAvg = systemLoad;
       }
     }
-     
+
     final long gcs = Utils.getGCTotalCollectionCount();
     _measurements.measure("GCS", (int)(gcs - lastGCCount));
     final long gcTime = Utils.getGCTotalTime();
@@ -286,32 +283,32 @@ class StatusThread extends Thread
     lastGCCount = gcs;
     lastGCTime = gcTime;
   }
-  
+
   /** @return The maximum threads running during the test. */
   public int getMaxThreads() {
     return _maxThreads;
   }
-  
+
   /** @return The minimum threads running during the test. */
   public int getMinThreads() {
     return _minThreads;
   }
-  
+
   /** @return The maximum memory used during the test. */
   public long getMaxUsedMem() {
     return _maxUsedMem;
   }
-  
+
   /** @return The minimum memory used during the test. */
   public long getMinUsedMem() {
     return _minUsedMem;
   }
-  
+
   /** @return The maximum load average during the test. */
   public double getMaxLoadAvg() {
     return _maxLoadAvg;
   }
-  
+
   /** @return The minimum load average during the test. */
   public double getMinLoadAvg() {
     return _minLoadAvg;
@@ -357,69 +354,6 @@ class RemainingFormatter {
 }
 
 /**
- * A thread to periodically feed a Hazelcast DB with measurements.
- * Hazelcast exposes a RestAPI to communicate with the frontend.
- *
- * @author archangelx360
- */
-class HazelcastThread extends Thread
-{
-  private ConcurrentMap<String, OneMeasurement> _measurementStorageMap;
-
-  /**
-   * Creates a new HazelcastThread.
-   *
-   */
-  public HazelcastThread()
-  {
-    Config config = new Config();
-    config.setProperty("hazelcast.rest.enabled", "true");
-    HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-    _measurementStorageMap = h.getMap("test");
-  }
-
-  /**
-   * Run and periodically fill storage DB for frontend.
-   */
-  @Override
-  public void run()
-  {
-    boolean alldone = false;
-    boolean benchmarkDone = false;
-    int timeToWait = 200;
-    CountDownLatch countDownLatch = new CountDownLatch(1);
-    do {
-      if (!benchmarkDone) {
-        ConcurrentMap<String, OneMeasurement> opToMesurementMap = Measurements.getMeasurements().get_opToMesurementMap();
-        for (String key : _measurementStorageMap.keySet()) {
-          _measurementStorageMap.replace(key, opToMesurementMap.get(key));
-        }
-        for (String key : opToMesurementMap.keySet()) {
-          _measurementStorageMap.putIfAbsent(key, opToMesurementMap.get(key));
-        }
-      } else {
-        timeToWait = 5000;
-        System.err.println("Awaiting clients...");
-        /*Gson gson = new Gson();
-        String json = gson.toJson(_measurementStorageMap);
-        System.err.println(json);*/
-      }
-      try {
-        countDownLatch.await(timeToWait, TimeUnit.MILLISECONDS);
-      }
-      catch( InterruptedException ie) {
-        //Thread.currentThread().interrupt();
-        System.err.println("It's HAZELCAST TIME !");
-        benchmarkDone=true;
-      }
-
-      // TODO : find a proper way to stop this program.
-    } while (!alldone);
-  }
-
-}
-
-/**
  * A thread for executing transactions or data inserts to the database.
  *
  * @author cooperb
@@ -456,7 +390,8 @@ class ClientThread implements Runnable
    * @param targetperthreadperms target number of operations per thread per ms
    * @param completeLatch The latch tracking the completion of all clients.
    */
-  public ClientThread(DB db, boolean dotransactions, Workload workload, Properties props, int opcount, double targetperthreadperms, CountDownLatch completeLatch)
+  public ClientThread(DB db, boolean dotransactions, Workload workload, Properties props,
+                      int opcount, double targetperthreadperms, CountDownLatch completeLatch)
   {
     _db=db;
     _dotransactions=dotransactions;
@@ -593,7 +528,7 @@ class ClientThread implements Runnable
       _measurements.setIntendedStartTimeNs(deadline);
     }
   }
-  
+
   /**
    * the total amount of work this thread is still expected to do
    */
@@ -675,7 +610,7 @@ public class Client
   private static StatusThread statusthread = null;
 
   /** An optional thread used to use a Web measurement visualization progress. */
-  private static HazelcastThread hazelcastthread = null;
+  private static RestAPIThread frontenddaemonthread = null;
 
   // HTrace integration related constants.
 
@@ -767,7 +702,7 @@ public class Client
       exporter.write("OVERALL", "RunTime(ms)", runtime);
       double throughput = 1000.0 * (opcount) / (runtime);
       exporter.write("OVERALL", "Throughput(ops/sec)", throughput);
-      
+
       final Map<String, Long[]> gcs = Utils.getGCStatst();
       long totalGCCount = 0;
       long totalGCTime = 0;
@@ -779,7 +714,7 @@ public class Client
         totalGCTime += entry.getValue()[1];
       }
       exporter.write("TOTAL_GCs", "Count", totalGCCount);
-      
+
       exporter.write("TOTAL_GC_TIME", "Time(ms)", totalGCTime);
       exporter.write("TOTAL_GC_TIME_%", "Time(%)", ((double)totalGCTime / runtime) * (double)100);
       if (statusthread != null && statusthread.trackJVMStats()) {
@@ -1164,7 +1099,7 @@ public class Client
         standardstatus=true;
       }
       int statusIntervalSeconds = Integer.parseInt(props.getProperty("status.interval","10"));
-      boolean trackJVMStats = props.getProperty(Measurements.MEASUREMENT_TRACK_JVM_PROPERTY, 
+      boolean trackJVMStats = props.getProperty(Measurements.MEASUREMENT_TRACK_JVM_PROPERTY,
           Measurements.MEASUREMENT_TRACK_JVM_PROPERTY_DEFAULT).equals("true");
       statusthread=new StatusThread(completeLatch,clients,label,standardstatus,statusIntervalSeconds,trackJVMStats);
       statusthread.start();
@@ -1172,8 +1107,8 @@ public class Client
 
     boolean frontend = true;
     if (frontend) {
-      hazelcastthread=new HazelcastThread();
-      hazelcastthread.start();
+      frontenddaemonthread =new RestAPIThread();
+      frontenddaemonthread.start();
     }
 
     Thread terminator = null;
@@ -1240,10 +1175,10 @@ public class Client
         if (frontend)
         {
           // wake up status thread if it's asleep
-          hazelcastthread.interrupt();
+          frontenddaemonthread.interrupt();
           // at this point we assume all the monitored threads are already gone as per above join loop.
           try {
-            hazelcastthread.join();
+            frontenddaemonthread.join();
           } catch (InterruptedException e) {
           }
         }
@@ -1269,6 +1204,8 @@ public class Client
       e.printStackTrace();
       System.exit(-1);
     }
+
+    Handler.getInstance().closeConnection();
 
     System.exit(0);
   }

@@ -311,8 +311,4 @@ public class Measurements {
     return ret;
   }
 
-  // TODO(archangelx360) : the following is a workaround for Hazelcast to reconsider
-  public ConcurrentHashMap<String, OneMeasurement> get_opToMesurementMap() {
-    return _opToMesurementMap;
-  }
 }

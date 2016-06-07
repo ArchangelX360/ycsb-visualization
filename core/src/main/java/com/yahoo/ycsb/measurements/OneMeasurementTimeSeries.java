@@ -25,32 +25,13 @@ import java.text.DecimalFormat;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.yahoo.ycsb.frontend.Handler;
 import com.yahoo.ycsb.measurements.exporter.MeasurementsExporter;
-
-class SeriesUnit implements Serializable
-{
-
-  // TODO(archangelx360) : the following is a workaround for serialization to reconsider
-  public SeriesUnit(){
-
-  }
-
-  /**
-   * @param time
-   * @param average
-   */
-  public SeriesUnit(long time, double average) {
-    this.time = time;
-    this.average = average;
-  }
-  public long time;
-  public double average;
-}
 
 /**
  * A time series measurement of a metric, such as READ LATENCY.
  */
-public class OneMeasurementTimeSeries extends OneMeasurement implements Serializable
+public class OneMeasurementTimeSeries extends OneMeasurement //implements Serializable
 {
 
   /**
@@ -77,9 +58,9 @@ public class OneMeasurementTimeSeries extends OneMeasurement implements Serializ
   int max=-1;
 
   // TODO(archangelx360) : the following is a workaround for serialization to reconsider
-  public OneMeasurementTimeSeries(){
+  /*public OneMeasurementTimeSeries(){
     super();
-  }
+  }*/
 
   public OneMeasurementTimeSeries(String name, Properties props)
   {
@@ -88,7 +69,7 @@ public class OneMeasurementTimeSeries extends OneMeasurement implements Serializ
     _measurements=new Vector<SeriesUnit>();
   }
 
-  synchronized void checkEndOfUnit(boolean forceend)
+  synchronized SeriesUnit checkEndOfUnit(boolean forceend)
   {
     long now=System.currentTimeMillis();
 
@@ -103,19 +84,25 @@ public class OneMeasurementTimeSeries extends OneMeasurement implements Serializ
     if ( (unit>currentunit) || (forceend) )
     {
       double avg=((double)sum)/((double)count);
-      _measurements.add(new SeriesUnit(currentunit,avg));
+      SeriesUnit su = new SeriesUnit(currentunit,avg);
+      _measurements.add(su);
 
       currentunit=unit;
 
       count=0;
       sum=0;
+      return su;
     }
+    return null;
   }
 
   @Override
   public void measure(int latency)
   {
-    checkEndOfUnit(false);
+    SeriesUnit su = checkEndOfUnit(false);
+    if (su != null) {
+      Handler.getInstance().handleNewValueInThread(super.getName(), su);
+    }
 
     count++;
     sum+=latency;
@@ -166,4 +153,7 @@ public class OneMeasurementTimeSeries extends OneMeasurement implements Serializ
     return "["+getName()+" AverageLatency(us)="+d.format(report)+"]";
   }
 
+  public Vector<SeriesUnit> get_measurements() {
+    return _measurements;
+  }
 }
