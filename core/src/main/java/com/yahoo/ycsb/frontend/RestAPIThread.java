@@ -11,20 +11,19 @@ import java.util.List;
 import java.util.concurrent.*;
 
 /**
- * A thread to periodically feed a Hazelcast DB with measurements.
- * Hazelcast exposes a RestAPI to communicate with the frontend.
+ * The RestAPI handling thread
  *
  * @author archangelx360
  */
+// TODO(archangelx360) : better architecture of this class
 public class RestAPIThread extends Thread
 {
 
   /* Configuration */
   static final int DEFAULT_PORT = 4567;
-    Gson gson = new Gson();
 
   /**
-   * Creates a new HazelcastThread.
+   * Creates a new RestAPI Thread.
    *
    */
   public RestAPIThread()
@@ -33,28 +32,23 @@ public class RestAPIThread extends Thread
       CorsFilter.apply();
   }
 
-  /**
-   * Run and periodically fill storage DB for frontend.
-   */
+
   @Override
   public void run()
   {
       Spark.get("/operationType/:operationType", (request, response) -> {
-        List<SeriesUnit> l = Handler.getInstance().handleGetOperationInThread(request.params(":operationType"));
-        /*List<SeriesUnit> l = new ArrayList<>();
-        l.add(new SeriesUnit(20, 20));*/
-        return l;
-      }, gson::toJson);
+        String result = Handler.getInstance().handleGetOperationInThread(request.params(":operationType"));
+        return result;
+      });
 
     boolean alldone = false;
     CountDownLatch countDownLatch = new CountDownLatch(1);
     do {
       try {
         System.err.println("Awaiting clients...");
-        countDownLatch.await(2000, TimeUnit.MILLISECONDS);
+        countDownLatch.await(5000, TimeUnit.MILLISECONDS);
       } catch( InterruptedException ie) {
         System.err.println("Interrupted.");
-        //Handler.getInstance().closeConnection();
         //alldone = true;
       }
       // TODO : find a proper way to stop this program.

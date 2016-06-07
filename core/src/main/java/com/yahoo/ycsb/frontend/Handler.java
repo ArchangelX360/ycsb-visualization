@@ -1,12 +1,17 @@
 package com.yahoo.ycsb.frontend;
 
 import com.yahoo.ycsb.measurements.SeriesUnit;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.javalite.activejdbc.Base;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
 
+/**
+ * Handles the periodically fill of our storage DB for the frontend.
+ */
 public class Handler {
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -38,8 +43,35 @@ public class Handler {
     // this is run in a different thread
     private static void handleNewValue(String key, SeriesUnit measurement) {
         double latency = Double.isNaN(measurement.average) ? 0 : measurement.average;
-        // TODO : ATTENTION C'EST UN NAN PAS UN 0 NORMALEMENT
-        SeriesUnit.createIt("operationType", key, "time", measurement.time, "latency", latency);
+        // FIXME(archangelx360) :  WARNING IT'S A NaN NOT A ZERO
+        Measure.createIt("operationType", key, "time", measurement.time, "latency", latency, "createdAt", new Date(System.currentTimeMillis()));
+    }
+
+    String handleGetOperationInThread(String operationType) {
+        Future<String> future = executor.submit(() -> handleGetOperation(operationType));
+        String result = "";
+        try {
+            result = future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    private String handleGetOperation(String operationType) {
+        List<Measure> result = Measure.where("operationType = ?", operationType);
+        return convertToJson(result);
+    }
+
+    private String convertToJson(List<Measure> list) {
+        ObjectMapper mapper = new ObjectMapper();
+        String json = "";
+        try {
+            json = mapper.writeValueAsString(list);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return json;
     }
 
     public void closeConnection() {
@@ -53,22 +85,5 @@ public class Handler {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    }
-
-    List<SeriesUnit> handleGetOperationInThread(String operationType) {
-        //Future<List<SeriesUnit>> future = executor.submit(() -> handleGetOperation(operationType));
-        List<SeriesUnit> l = new ArrayList<>();
-        /*try {
-            l = future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }*/
-        //l.add(new SeriesUnit(20, 25));
-        return l;
-    }
-
-    private List<SeriesUnit> handleGetOperation(String operationType) {
-        List<SeriesUnit> result = SeriesUnit.where("operationType = ?", operationType);
-        return result;
     }
 }

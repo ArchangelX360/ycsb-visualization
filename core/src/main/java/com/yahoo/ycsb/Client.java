@@ -1105,6 +1105,7 @@ public class Client
       statusthread.start();
     }
 
+    // TODO(archangelx360) : make frontend boolean a YCSB parameter
     boolean frontend = true;
     if (frontend) {
       frontenddaemonthread =new RestAPIThread();
@@ -1205,6 +1206,7 @@ public class Client
       System.exit(-1);
     }
 
+    // TODO(archangelx360) : find a better way to close this connection
     Handler.getInstance().closeConnection();
 
     System.exit(0);
