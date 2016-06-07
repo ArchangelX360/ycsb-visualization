@@ -18,12 +18,9 @@
 package com.yahoo.ycsb.measurements;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Vector;
 import java.util.Properties;
 import java.text.DecimalFormat;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.yahoo.ycsb.frontend.Handler;
 import com.yahoo.ycsb.measurements.exporter.MeasurementsExporter;
@@ -56,11 +53,6 @@ public class OneMeasurementTimeSeries extends OneMeasurement //implements Serial
 
   int min=-1;
   int max=-1;
-
-  // TODO(archangelx360) : the following is a workaround for serialization to reconsider
-  /*public OneMeasurementTimeSeries(){
-    super();
-  }*/
 
   public OneMeasurementTimeSeries(String name, Properties props)
   {
