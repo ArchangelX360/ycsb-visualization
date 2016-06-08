@@ -75,6 +75,11 @@ LICENSE file.
       <artifactId>slf4j-simple</artifactId>
       <version>1.7.9</version>
     </dependency>
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongo-java-driver</artifactId>
+      <version>RELEASE</version>
+    </dependency>
   </dependencies>
   <build>
     <resources>

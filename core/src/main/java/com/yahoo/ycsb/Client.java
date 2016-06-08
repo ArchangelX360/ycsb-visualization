@@ -35,9 +35,8 @@ import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
 
-import com.yahoo.ycsb.frontend.Handler;
-import com.yahoo.ycsb.frontend.RestAPIThread;
-
+import com.mysql.jdbc.jdbc2.optional.SuspendableXAConnection;
+import com.yahoo.ycsb.frontend.MongoHandler;
 import org.apache.htrace.core.Tracer;
 import org.apache.htrace.core.TraceScope;
 import org.apache.htrace.core.HTraceConfiguration;
@@ -606,11 +605,14 @@ public class Client
    */
   public static final String DO_TRANSACTIONS_PROPERTY = "dotransactions";
 
+  /**
+   * The frontend properties class to be used.
+   */
+  public static final String FRONTENDHOOK_PROPERTY="frontendhook";
+  public static final String BENCHMARK_NAME="benchmarkname";
+
   /** An optional thread used to track progress and measure JVM stats. */
   private static StatusThread statusthread = null;
-
-  /** An optional thread used to use a Web measurement visualization progress. */
-  private static RestAPIThread frontenddaemonthread = null;
 
   // HTrace integration related constants.
 
@@ -643,6 +645,8 @@ public class Client
     System.out.println("          values in the propertyfile");
     System.out.println("  -s:  show status during run (default: no status)");
     System.out.println("  -l label:  use label for status (e.g. to label one experiment out of a whole batch)");
+    System.out.println("  -frontendhook boolean:  activate frontend db hook to enable Web visualisation");
+    System.out.println("  -benchmarkname name:  name of benchmark launch by Web visualisation");
     System.out.println("");
     System.out.println("Required properties:");
     System.out.println("  "+WORKLOAD_PROPERTY+": the name of the workload class to use (e.g. com.yahoo.ycsb.workloads.CoreWorkload)");
@@ -881,6 +885,30 @@ public class Client
         //System.out.println("["+name+"]=["+value+"]");
         argindex++;
       }
+      else if (args[argindex].compareTo("-frontendhook")==0)
+      {
+        argindex++;
+        if (argindex>=args.length)
+        {
+          usageMessage();
+          System.out.println("Missing argument value for -frontendhook.");
+          System.exit(0);
+        }
+        props.setProperty(FRONTENDHOOK_PROPERTY,args[argindex]);
+        argindex++;
+      }
+      else if (args[argindex].compareTo("-benchmarkname")==0)
+      {
+        argindex++;
+        if (argindex>=args.length)
+        {
+          usageMessage();
+          System.out.println("Missing argument value for -benchmarkname.");
+          System.exit(0);
+        }
+        props.setProperty(BENCHMARK_NAME,args[argindex]);
+        argindex++;
+      }
       else
       {
         usageMessage();
@@ -974,6 +1002,11 @@ public class Client
 
 
     warningthread.start();
+
+    //set up MongoHandler
+    if(Boolean.parseBoolean(props.getProperty(FRONTENDHOOK_PROPERTY))) {
+      MongoHandler.getInstance().setCollectionName(props.getProperty(BENCHMARK_NAME));
+    }
 
     //set up measurements
     Measurements.setProperties(props);
@@ -1105,13 +1138,6 @@ public class Client
       statusthread.start();
     }
 
-    // TODO(archangelx360) : make frontend boolean a YCSB parameter
-    boolean frontend = true;
-    if (frontend) {
-      frontenddaemonthread =new RestAPIThread();
-      frontenddaemonthread.start();
-    }
-
     Thread terminator = null;
     long st;
     long en;
@@ -1173,17 +1199,6 @@ public class Client
           }
         }
 
-        if (frontend)
-        {
-          // wake up status thread if it's asleep
-          frontenddaemonthread.interrupt();
-          // at this point we assume all the monitored threads are already gone as per above join loop.
-          try {
-            frontenddaemonthread.join();
-          } catch (InterruptedException e) {
-          }
-        }
-
         workload.cleanup();
       }
     }
@@ -1205,9 +1220,6 @@ public class Client
       e.printStackTrace();
       System.exit(-1);
     }
-
-    // TODO(archangelx360) : find a better way to close this connection
-    Handler.getInstance().closeConnection();
 
     System.exit(0);
   }

@@ -22,8 +22,10 @@ import java.util.Vector;
 import java.util.Properties;
 import java.text.DecimalFormat;
 
-import com.yahoo.ycsb.frontend.Handler;
+import com.yahoo.ycsb.frontend.MongoHandler;
 import com.yahoo.ycsb.measurements.exporter.MeasurementsExporter;
+
+import static com.yahoo.ycsb.Client.FRONTENDHOOK_PROPERTY;
 
 /**
  * A time series measurement of a metric, such as READ LATENCY.
@@ -39,6 +41,7 @@ public class OneMeasurementTimeSeries extends OneMeasurement //implements Serial
 
   int _granularity;
   Vector<SeriesUnit> _measurements;
+  boolean _frontendHook;
 
   long start=-1;
   long currentunit=-1;
@@ -58,6 +61,7 @@ public class OneMeasurementTimeSeries extends OneMeasurement //implements Serial
   {
     super(name);
     _granularity=Integer.parseInt(props.getProperty(GRANULARITY,GRANULARITY_DEFAULT));
+    _frontendHook=Boolean.parseBoolean(props.getProperty(FRONTENDHOOK_PROPERTY));
     _measurements=new Vector<SeriesUnit>();
   }
 
@@ -92,8 +96,10 @@ public class OneMeasurementTimeSeries extends OneMeasurement //implements Serial
   public void measure(int latency)
   {
     SeriesUnit su = checkEndOfUnit(false);
-    if (su != null) {
-      Handler.getInstance().handleNewValueInThread(super.getName(), su);
+    if (_frontendHook) {
+      if (su != null) {
+        MongoHandler.getInstance().handleNewValueInThread(super.getName(), su);
+      }
     }
 
     count++;
