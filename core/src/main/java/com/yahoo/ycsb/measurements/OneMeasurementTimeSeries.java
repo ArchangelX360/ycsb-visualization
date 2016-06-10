@@ -130,6 +130,10 @@ public class OneMeasurementTimeSeries extends OneMeasurement //implements Serial
     exporter.write(getName(), "MinLatency(us)", min);
     exporter.write(getName(), "MaxLatency(us)", max);
 
+    if (_frontendHook) {
+      MongoHandler.getInstance().handleNewValueInThread(super.getName() + "_TOTAL_AVERAGE", new SeriesUnit(-1, (((double) totallatency) / ((double) operations))));
+    }
+
     // TODO: 95th and 99th percentile latency
 
     exportStatusCounts(exporter);

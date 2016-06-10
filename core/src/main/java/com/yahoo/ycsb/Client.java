@@ -35,7 +35,6 @@ import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
 
-import com.mysql.jdbc.jdbc2.optional.SuspendableXAConnection;
 import com.yahoo.ycsb.frontend.MongoHandler;
 import org.apache.htrace.core.Tracer;
 import org.apache.htrace.core.TraceScope;
@@ -1219,6 +1218,11 @@ public class Client
       System.err.println("Could not export measurements, error: " + e.getMessage());
       e.printStackTrace();
       System.exit(-1);
+    }
+
+    /* Closing MongoHandler thread */
+    if(Boolean.parseBoolean(props.getProperty(FRONTENDHOOK_PROPERTY))) {
+      MongoHandler.getInstance().closeConnection();
     }
 
     System.exit(0);

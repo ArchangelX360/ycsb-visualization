@@ -36,8 +36,6 @@ public class MongoHandler {
         // opens the DB client for the thread of our executor
         executor.execute(() -> {
             mongoClient = new MongoClient("localhost", MongoHandler.DB_PORT);
-            MongoDatabase db = mongoClient.getDatabase(MongoHandler.DB_NAME);
-            db.createCollection(collectionName);
         });
     }
 
@@ -64,4 +62,16 @@ public class MongoHandler {
 
         db.getCollection(mH.collectionName).updateOne(filter, doc, options);
     }
+
+    public void closeConnection() {
+        // closes the DB for the thread of the executor
+        System.err.println("Shutting down DB hook...");
+        executor.shutdown();
+        try {
+            executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
