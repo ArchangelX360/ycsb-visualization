@@ -36,9 +36,8 @@ insertproportion=0
 requestdistribution=zipfian
 
 # Frontend required parameters
-db=com.yahoo.ycsb.db.MemcachedClient
-frontendhook=true
-measurementtype=timeseries
-timeseries.granularity=1
-benchmarkname=test1
+#db=com.yahoo.ycsb.db.MemcachedClient
+#frontendhook=true
+#measurementtype=timeseries
+#timeseries.granularity=1
 

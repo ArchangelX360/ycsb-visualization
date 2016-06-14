@@ -52,15 +52,13 @@ public class MongoHandler {
         MongoHandler mH = MongoHandler.getInstance();
         MongoDatabase db = mH.mongoClient.getDatabase(MongoHandler.DB_NAME);
 
-        Bson doc = new Document("$push", new Document("values", new Document("time", measurement.time)
+        Document doc = new Document("operationType", key)
                 .append("latency", latency)
-                .append("createdAt", new Date(System.currentTimeMillis()).toString())));
+                .append("time", measurement.time)
+                .append("createdAt", System.currentTimeMillis());
 
-        Bson filter = Filters.eq("operationType", key);
 
-        UpdateOptions options = new UpdateOptions().upsert(true);
-
-        db.getCollection(mH.collectionName).updateOne(filter, doc, options);
+        db.getCollection(mH.collectionName).insertOne(doc);
     }
 
     public void closeConnection() {

@@ -40,5 +40,3 @@ db=com.yahoo.ycsb.db.MemcachedClient
 frontendhook=false
 measurementtype=timeseries
 timeseries.granularity=1
-benchmarkname=test1
-
