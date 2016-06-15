@@ -1,12 +1,15 @@
 package com.yahoo.ycsb.frontend;
 
 import com.mongodb.*;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.UpdateOptions;
 import com.yahoo.ycsb.measurements.SeriesUnit;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+
 import java.util.Date;
 import java.util.concurrent.*;
 
@@ -36,6 +39,8 @@ public class MongoHandler {
         // opens the DB client for the thread of our executor
         executor.execute(() -> {
             mongoClient = new MongoClient("localhost", MongoHandler.DB_PORT);
+            MongoCollection<Document> collection = mongoClient.getDatabase(MongoHandler.DB_NAME).getCollection("names");
+            collection.createIndex(new Document("name", 1), new IndexOptions().unique(true));
         });
     }
 
@@ -63,6 +68,10 @@ public class MongoHandler {
                 .append("createdAt", System.currentTimeMillis());
 
         db.getCollection(mH.collectionName).insertOne(doc);
+        try {
+            db.getCollection("names").insertOne(new Document("name", mH.collectionName));
+        } catch (MongoWriteException ignored) {
+        }
     }
 
     public void closeConnection() {
