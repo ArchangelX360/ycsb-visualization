@@ -46,6 +46,11 @@ public class MongoHandler {
 
     // this is run in a different thread
     private static void handleNewValue(String key, SeriesUnit measurement) {
+        try {
+            Thread.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         double latency = Double.isNaN(measurement.average) ? 0 : measurement.average;
         // FIXME(archangelx360) :  WARNING IT'S A NaN NOT A ZERO
 
@@ -56,7 +61,6 @@ public class MongoHandler {
                 .append("latency", latency)
                 .append("time", measurement.time)
                 .append("createdAt", System.currentTimeMillis());
-
 
         db.getCollection(mH.collectionName).insertOne(doc);
     }
