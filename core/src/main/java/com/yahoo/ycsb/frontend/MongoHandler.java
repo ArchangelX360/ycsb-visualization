@@ -3,14 +3,9 @@ package com.yahoo.ycsb.frontend;
 import com.mongodb.*;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.UpdateOptions;
 import com.yahoo.ycsb.measurements.SeriesUnit;
 import org.bson.Document;
-import org.bson.conversions.Bson;
-
-import java.util.Date;
 import java.util.concurrent.*;
 
 /**
