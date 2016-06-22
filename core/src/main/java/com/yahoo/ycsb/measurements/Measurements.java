@@ -41,7 +41,8 @@ public class Measurements {
     HDRHISTOGRAM_AND_HISTOGRAM,
     HDRHISTOGRAM_AND_RAW,
     TIMESERIES,
-    RAW
+    RAW,
+    FRONTEND
   }
 
   public static final String MEASUREMENT_TYPE_PROPERTY = "measurementtype";
@@ -114,6 +115,10 @@ public class Measurements {
     {
       _measurementType = MeasurementType.RAW;
     }
+    else if (mTypeString.equals("frontend"))
+    {
+      _measurementType = MeasurementType.FRONTEND;
+    }
     else {
       throw new IllegalArgumentException("unknown "+MEASUREMENT_TYPE_PROPERTY+"="+mTypeString);
     }
@@ -156,6 +161,8 @@ public class Measurements {
         return new OneMeasurementTimeSeries(name, _props);
       case RAW:
         return new OneMeasurementRaw(name, _props);
+      case FRONTEND:
+        return new OneMeasurementFrontend(name, _props);
       default:
         throw new AssertionError("Impossible to be here. Dead code reached. Bugs?");
     }

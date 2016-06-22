@@ -78,7 +78,7 @@ YCSB visualisation
 We added two parameters to YCSB:
 
 * **benchmarkname=my_bench_name** is the name of the benchmark's table in the storage database. Be careful, if you use this name for two different benchmarks, the result of the second will be considered as new results for the first one.
-* **frontendhook=boolean** true for activating the storage database hook and fill it with benchmark results, if false the frontend application won't make graphs of your results.
+* **measurementtype=frontend** will activate the frontend DB hook for measurement and allows the graph visualisation
 
 #### Storage database
 

@@ -607,7 +607,6 @@ public class Client
   /**
    * The frontend properties class to be used.
    */
-  public static final String FRONTENDHOOK_PROPERTY="frontendhook";
   public static final String BENCHMARK_NAME="benchmarkname";
 
   /** An optional thread used to track progress and measure JVM stats. */
@@ -644,7 +643,6 @@ public class Client
     System.out.println("          values in the propertyfile");
     System.out.println("  -s:  show status during run (default: no status)");
     System.out.println("  -l label:  use label for status (e.g. to label one experiment out of a whole batch)");
-    System.out.println("  -frontendhook boolean:  activate frontend db hook to enable Web visualisation");
     System.out.println("  -benchmarkname name:  name of benchmark launch by Web visualisation");
     System.out.println("");
     System.out.println("Required properties:");
@@ -884,18 +882,6 @@ public class Client
         //System.out.println("["+name+"]=["+value+"]");
         argindex++;
       }
-      else if (args[argindex].compareTo("-frontendhook")==0)
-      {
-        argindex++;
-        if (argindex>=args.length)
-        {
-          usageMessage();
-          System.out.println("Missing argument value for -frontendhook.");
-          System.exit(0);
-        }
-        props.setProperty(FRONTENDHOOK_PROPERTY,args[argindex]);
-        argindex++;
-      }
       else if (args[argindex].compareTo("-benchmarkname")==0)
       {
         argindex++;
@@ -1002,8 +988,10 @@ public class Client
 
     warningthread.start();
 
+
     //set up MongoHandler
-    if(Boolean.parseBoolean(props.getProperty(FRONTENDHOOK_PROPERTY))) {
+    String mTypeString = props.getProperty("measurementtype");
+    if(mTypeString.equals("frontend")) {
       MongoHandler.getInstance().setCollectionName(props.getProperty(BENCHMARK_NAME));
     }
 
@@ -1221,7 +1209,7 @@ public class Client
     }
 
     /* Closing MongoHandler thread */
-    if(Boolean.parseBoolean(props.getProperty(FRONTENDHOOK_PROPERTY))) {
+    if(mTypeString.equals("frontend")) {
       MongoHandler.getInstance().closeConnection();
     }
 

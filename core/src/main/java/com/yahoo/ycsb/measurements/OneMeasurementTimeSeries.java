@@ -21,16 +21,29 @@ import java.io.IOException;
 import java.util.Vector;
 import java.util.Properties;
 import java.text.DecimalFormat;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import com.yahoo.ycsb.frontend.MongoHandler;
 import com.yahoo.ycsb.measurements.exporter.MeasurementsExporter;
 
-import static com.yahoo.ycsb.Client.FRONTENDHOOK_PROPERTY;
+class SeriesUnit
+{
+  /**
+   * @param time
+   * @param average
+   */
+  public SeriesUnit(long time, double average) {
+    this.time = time;
+    this.average = average;
+  }
+  public long time;
+  public double average;
+}
 
 /**
  * A time series measurement of a metric, such as READ LATENCY.
  */
-public class OneMeasurementTimeSeries extends OneMeasurement //implements Serializable
+public class OneMeasurementTimeSeries extends OneMeasurement
 {
 
   /**
@@ -41,7 +54,6 @@ public class OneMeasurementTimeSeries extends OneMeasurement //implements Serial
 
   int _granularity;
   Vector<SeriesUnit> _measurements;
-  boolean _frontendHook;
 
   long start=-1;
   long currentunit=-1;
@@ -61,11 +73,10 @@ public class OneMeasurementTimeSeries extends OneMeasurement //implements Serial
   {
     super(name);
     _granularity=Integer.parseInt(props.getProperty(GRANULARITY,GRANULARITY_DEFAULT));
-    _frontendHook=Boolean.parseBoolean(props.getProperty(FRONTENDHOOK_PROPERTY));
     _measurements=new Vector<SeriesUnit>();
   }
 
-  synchronized SeriesUnit checkEndOfUnit(boolean forceend)
+  synchronized void checkEndOfUnit(boolean forceend)
   {
     long now=System.currentTimeMillis();
 
@@ -80,27 +91,19 @@ public class OneMeasurementTimeSeries extends OneMeasurement //implements Serial
     if ( (unit>currentunit) || (forceend) )
     {
       double avg=((double)sum)/((double)count);
-      SeriesUnit su = new SeriesUnit(currentunit,avg);
-      _measurements.add(su);
+      _measurements.add(new SeriesUnit(currentunit,avg));
 
       currentunit=unit;
 
       count=0;
       sum=0;
-      return su;
     }
-    return null;
   }
 
   @Override
   public void measure(int latency)
   {
-    SeriesUnit su = checkEndOfUnit(false);
-    if (_frontendHook) {
-      if (su != null) {
-        MongoHandler.getInstance().handleNewValueInThread(super.getName(), su);
-      }
-    }
+    checkEndOfUnit(false);
 
     count++;
     sum+=latency;
@@ -151,7 +154,4 @@ public class OneMeasurementTimeSeries extends OneMeasurement //implements Serial
     return "["+getName()+" AverageLatency(us)="+d.format(report)+"]";
   }
 
-  public Vector<SeriesUnit> get_measurements() {
-    return _measurements;
-  }
 }

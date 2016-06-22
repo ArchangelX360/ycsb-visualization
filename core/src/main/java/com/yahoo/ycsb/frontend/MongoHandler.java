@@ -4,7 +4,6 @@ import com.mongodb.*;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
-import com.yahoo.ycsb.measurements.SeriesUnit;
 import org.bson.Document;
 import java.util.concurrent.*;
 
@@ -40,27 +39,24 @@ public class MongoHandler {
         });
     }
 
-    public void handleNewValueInThread(String key, SeriesUnit measurement) {
+    public void handleNewValueInThread(String key, long latency) {
         // runs handleNewValue() in the thread of the executor
-        executor.execute(() -> MongoHandler.handleNewValue(key, measurement));
+        executor.execute(() -> MongoHandler.handleNewValue(key, latency));
     }
 
     // this is run in a different thread
-    private static void handleNewValue(String key, SeriesUnit measurement) {
+    private static void handleNewValue(String key, long latency) {
         try {
             Thread.sleep(1);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        double latency = Double.isNaN(measurement.average) ? 0 : measurement.average;
-        // FIXME(archangelx360) :  WARNING IT'S A NaN NOT A ZERO
 
         MongoHandler mH = MongoHandler.getInstance();
         MongoDatabase db = mH.mongoClient.getDatabase(MongoHandler.DB_NAME);
 
         Document doc = new Document("operationType", key)
                 .append("latency", latency)
-                .append("time", measurement.time)
                 .append("createdAt", System.currentTimeMillis());
 
         db.getCollection(mH.collectionName).insertOne(doc);
