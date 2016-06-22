@@ -16,6 +16,7 @@ public class MongoHandler {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private static final String DB_NAME = "dbMeasurements";
+    private static final String DB_HOST = "localhost";
     private static final int DB_PORT = 27017;
     private static final MongoHandler INSTANCE = new MongoHandler();
 
@@ -33,7 +34,7 @@ public class MongoHandler {
     private MongoHandler() {
         // opens the DB client for the thread of our executor
         executor.execute(() -> {
-            mongoClient = new MongoClient("localhost", MongoHandler.DB_PORT);
+            mongoClient = new MongoClient(MongoHandler.DB_HOST, MongoHandler.DB_PORT);
             MongoCollection<Document> collection = mongoClient.getDatabase(MongoHandler.DB_NAME).getCollection("names");
             collection.createIndex(new Document("name", 1), new IndexOptions().unique(true));
         });
