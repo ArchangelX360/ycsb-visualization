@@ -1,12 +1,12 @@
 /**
  * Copyright (c) 2015 Google Inc. All rights reserved.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License"); you
  * may not use this file except in compliance with the License. You
  * may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
@@ -17,44 +17,73 @@
 
 package com.yahoo.ycsb.measurements;
 
-import com.yahoo.ycsb.frontend.MongoHandler;
+import com.yahoo.ycsb.frontend.FrontEndList;
 import com.yahoo.ycsb.measurements.exporter.MeasurementsExporter;
+import org.bson.Document;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedList;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Record a series of measurements as raw data points without down sampling,
  * optionally write to an output file when configured.
  *
  * @author stfeng
- *
  */
-class OneMeasurementFrontend extends OneMeasurement {
+public class OneMeasurementFrontend extends OneMeasurement {
 
-  OneMeasurementFrontend(String name, Properties props) {
-    super(name);
-  }
+    private FrontEndList<Document> points;
 
-  @Override
-  public void measure(int latency) {
-    MongoHandler.getInstance().handleNewValueInThread(super.getName(), latency);
-  }
+    OneMeasurementFrontend(String name, Properties props) {
+        super(name);
+        int operationToDo = 10;
 
-  @Override
-  public void exportMeasurements(MeasurementsExporter exporter)
-      throws IOException {
+        if (!Boolean.parseBoolean(props.getProperty("DO_TRANSACTIONS_PROPERTY"))) {
+            boolean hasInsertProp = props.containsKey("INSERT_COUNT_PROPERTY");
+            boolean hasRecordProp = props.containsKey("RECORD_COUNT_PROPERTY");
+            boolean hasBoth = hasInsertProp && hasRecordProp;
+            Integer insert_count_property = 0;
+            Integer record_count_property = 0;
 
-  }
+            if (hasInsertProp) {
+                insert_count_property = Integer.parseInt(props.getProperty("INSERT_COUNT_PROPERTY"));
+                operationToDo = insert_count_property;
+            }
+            if (hasRecordProp) {
+                record_count_property = Integer.parseInt(props.getProperty("RECORD_COUNT_PROPERTY"));
+                operationToDo = record_count_property;
+            }
+            if (hasBoth) {
+                operationToDo = Math.min(insert_count_property, record_count_property);
+            }
+        } else {
+            if (props.containsKey("OPERATION_COUNT_PROPERTY")) {
+                operationToDo = Integer.parseInt(props.getProperty("OPERATION_COUNT_PROPERTY"));
+            }
+        }
+        points = new FrontEndList<>(operationToDo);
+    }
 
-  @Override
-  public synchronized String getSummary() {
-    return "No summary available with this measurement type.";
-  }
+    @Override
+    public void measure(int latency) {
+        points.add(new Document("operationType", super.getName())
+                .append("latency", latency)
+                .append("createdAt", System.nanoTime())
+        );
+    }
+
+    @Override
+    public void exportMeasurements(MeasurementsExporter exporter)
+            throws IOException {
+    }
+
+    @Override
+    public synchronized String getSummary() {
+        return "No summary available with this measurement type.";
+    }
+
+    public FrontEndList<Document> getPoints() {
+        return points;
+    }
+
 }
