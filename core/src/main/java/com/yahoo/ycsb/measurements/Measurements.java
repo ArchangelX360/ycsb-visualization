@@ -168,8 +168,6 @@ public class Measurements {
         return new OneMeasurementRaw(name, _props);
       case FRONTEND:
         return new OneMeasurementFrontend(name, _props);
-      case FRONTEND_RAW:
-        return new OneMeasurementFrontendRaw(name, _props);
       default:
         throw new AssertionError("Impossible to be here. Dead code reached. Bugs?");
     }

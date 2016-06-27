@@ -36,7 +36,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
 
 import com.yahoo.ycsb.frontend.MongoHandler;
-import com.yahoo.ycsb.frontend.MongoHandlerRaw;
 import org.apache.htrace.core.Tracer;
 import org.apache.htrace.core.TraceScope;
 import org.apache.htrace.core.HTraceConfiguration;
@@ -997,8 +996,6 @@ public class Client
     }
     if(mTypeString.equals("frontend")) {
       MongoHandler.getInstance().setCollectionName(props.getProperty(BENCHMARK_NAME));
-    } else if (mTypeString.equals("frontendraw")) {
-      MongoHandlerRaw.getInstance().setCollectionName(props.getProperty(BENCHMARK_NAME));
     }
 
     //set up measurements
@@ -1217,8 +1214,6 @@ public class Client
     /* Closing MongoHandler thread */
     if(mTypeString.equals("frontend")) {
       MongoHandler.getInstance().closeConnection();
-    } else if (mTypeString.equals("frontendraw")) {
-      MongoHandlerRaw.getInstance().closeConnection();
     }
 
     System.exit(0);
