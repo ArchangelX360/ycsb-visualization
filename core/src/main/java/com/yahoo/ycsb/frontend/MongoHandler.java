@@ -2,7 +2,6 @@ package com.yahoo.ycsb.frontend;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.IndexOptions;
 import com.yahoo.ycsb.measurements.Measurements;
 import com.yahoo.ycsb.measurements.OneMeasurement;
 import com.yahoo.ycsb.measurements.OneMeasurementFrontend;
@@ -21,10 +20,13 @@ public class MongoHandler {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     private static final int INITIAL_DELAY = 200;
-    private static final int PERIOD = 1000;
+
+    // TODO : extract these parameters in workloads
+    private static final int PERIOD = 5000;
     private static final String DB_NAME = "dbMeasurements";
     private static final String DB_HOST = "localhost";
     private static final int DB_PORT = 27017;
+
     private static final MongoHandler INSTANCE = new MongoHandler();
 
     public static MongoHandler getInstance() {
@@ -53,11 +55,7 @@ public class MongoHandler {
     private void initConnection() {
         mongoClient = new MongoClient(MongoHandler.DB_HOST, MongoHandler.DB_PORT);
         db = mongoClient.getDatabase(MongoHandler.DB_NAME);
-        db.getCollection("names")
-                .createIndex(new Document("name", 1), new IndexOptions().unique(true));
-        db.getCollection(collectionName)
-                .createIndex(new Document("createdAt", 1), new IndexOptions().unique(true));
-        db.getCollection("names").insertOne(new Document("name", collectionName));
+        db.getCollection(collectionName).createIndex(new Document("num", 1));
     }
 
     private static void handleValues(List<Document> documents) {
@@ -72,7 +70,7 @@ public class MongoHandler {
 
     private static void fetchPoints(Map<String, OneMeasurement> opToMesurementMap) {
         for (String operationType : opToMesurementMap.keySet()) {
-            // FIXME: copy done here... That's bad but I can't figure out a other way to have consistency.
+            // FIXME: copy done here... That's bad but I can't figure out a other way to have consistency for now.
             FrontEndList<Document> documents = new FrontEndList<>(((OneMeasurementFrontend)
                     opToMesurementMap.get(operationType)).getPoints());
             int nextIndexToInsert = documents.getNextIndexToInsert();
@@ -92,7 +90,7 @@ public class MongoHandler {
         System.err.println("Shutting down DB hook...");
         executor.shutdown();
         try {
-            executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+            executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
