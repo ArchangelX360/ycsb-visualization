@@ -18,13 +18,8 @@ LICENSE file.
 
 Yahoo! Cloud System Benchmark (YCSB)
 ====================================
-**This is a fork + visualization of:** 
-[![Build Status](https://travis-ci.org/brianfrankcooper/YCSB.png?branch=master)](https://travis-ci.org/brianfrankcooper/YCSB)
-
-Links
------
+**This is a fork + visualization of:**
 http://wiki.github.com/brianfrankcooper/YCSB/  
-https://labs.yahoo.com/news/yahoo-cloud-serving-benchmark/
 
 
 Getting Started
