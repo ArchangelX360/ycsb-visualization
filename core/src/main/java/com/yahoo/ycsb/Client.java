@@ -32,7 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import com.yahoo.ycsb.frontend.MongoHandler;
@@ -56,10 +57,10 @@ class StatusThread extends Thread
 
   /** Stores the measurements for the run. */
   private final Measurements _measurements;
-
+  
   /** Whether or not to track the JVM stats per run */
   private final boolean _trackJVMStats;
-
+  
   /** The clients that are running. */
   private final List<ClientThread> _clients;
 
@@ -93,7 +94,7 @@ class StatusThread extends Thread
   {
     this(completeLatch, clients, label, standardstatus, statusIntervalSeconds, false);
   }
-
+  
   /**
    * Creates a new StatusThread.
    *
@@ -116,7 +117,7 @@ class StatusThread extends Thread
     _measurements = Measurements.getMeasurements();
     _trackJVMStats = trackJVMStats;
   }
-
+  
   /**
    * Run and periodically report status.
    */
@@ -136,7 +137,7 @@ class StatusThread extends Thread
       long nowMs=System.currentTimeMillis();
 
       lastTotalOps = computeStats(startTimeMs, startIntervalMs, nowMs, lastTotalOps);
-
+      
       if (_trackJVMStats) {
         measureJVM();
       }
@@ -247,9 +248,9 @@ class StatusThread extends Thread
       _maxThreads = threads;
     }
     _measurements.measure("THREAD_COUNT", threads);
-
+    
     // TODO - once measurements allow for other number types, switch to using
-    // the raw bytes. Otherwise we can track in MB to avoid negative values
+    // the raw bytes. Otherwise we can track in MB to avoid negative values 
     // when faced with huge heaps.
     final int usedMem = Utils.getUsedMemoryMegaBytes();
     if (usedMem < _minUsedMem) {
@@ -259,7 +260,7 @@ class StatusThread extends Thread
       _maxUsedMem = usedMem;
     }
     _measurements.measure("USED_MEM_MB", usedMem);
-
+    
     // Some JVMs may not implement this feature so if the value is less than
     // zero, just ommit it.
     final double systemLoad = Utils.getSystemLoadAverage();
@@ -273,7 +274,7 @@ class StatusThread extends Thread
         _minLoadAvg = systemLoad;
       }
     }
-
+     
     final long gcs = Utils.getGCTotalCollectionCount();
     _measurements.measure("GCS", (int)(gcs - lastGCCount));
     final long gcTime = Utils.getGCTotalTime();
@@ -281,32 +282,32 @@ class StatusThread extends Thread
     lastGCCount = gcs;
     lastGCTime = gcTime;
   }
-
+  
   /** @return The maximum threads running during the test. */
   public int getMaxThreads() {
     return _maxThreads;
   }
-
+  
   /** @return The minimum threads running during the test. */
   public int getMinThreads() {
     return _minThreads;
   }
-
+  
   /** @return The maximum memory used during the test. */
   public long getMaxUsedMem() {
     return _maxUsedMem;
   }
-
+  
   /** @return The minimum memory used during the test. */
   public long getMinUsedMem() {
     return _minUsedMem;
   }
-
+  
   /** @return The maximum load average during the test. */
   public double getMaxLoadAvg() {
     return _maxLoadAvg;
   }
-
+  
   /** @return The minimum load average during the test. */
   public double getMinLoadAvg() {
     return _minLoadAvg;
@@ -388,8 +389,7 @@ class ClientThread implements Runnable
    * @param targetperthreadperms target number of operations per thread per ms
    * @param completeLatch The latch tracking the completion of all clients.
    */
-  public ClientThread(DB db, boolean dotransactions, Workload workload, Properties props,
-                      int opcount, double targetperthreadperms, CountDownLatch completeLatch)
+  public ClientThread(DB db, boolean dotransactions, Workload workload, Properties props, int opcount, double targetperthreadperms, CountDownLatch completeLatch)
   {
     _db=db;
     _dotransactions=dotransactions;
@@ -526,7 +526,7 @@ class ClientThread implements Runnable
       _measurements.setIntendedStartTimeNs(deadline);
     }
   }
-
+  
   /**
    * the total amount of work this thread is still expected to do
    */
@@ -643,7 +643,6 @@ public class Client
     System.out.println("          values in the propertyfile");
     System.out.println("  -s:  show status during run (default: no status)");
     System.out.println("  -l label:  use label for status (e.g. to label one experiment out of a whole batch)");
-    System.out.println("  -benchmarkname name:  name of benchmark launch by Web visualisation");
     System.out.println("");
     System.out.println("Required properties:");
     System.out.println("  "+WORKLOAD_PROPERTY+": the name of the workload class to use (e.g. com.yahoo.ycsb.workloads.CoreWorkload)");
@@ -703,7 +702,7 @@ public class Client
       exporter.write("OVERALL", "RunTime(ms)", runtime);
       double throughput = 1000.0 * (opcount) / (runtime);
       exporter.write("OVERALL", "Throughput(ops/sec)", throughput);
-
+      
       final Map<String, Long[]> gcs = Utils.getGCStatst();
       long totalGCCount = 0;
       long totalGCTime = 0;
@@ -715,7 +714,7 @@ public class Client
         totalGCTime += entry.getValue()[1];
       }
       exporter.write("TOTAL_GCs", "Count", totalGCCount);
-
+      
       exporter.write("TOTAL_GC_TIME", "Time(ms)", totalGCTime);
       exporter.write("TOTAL_GC_TIME_%", "Time(%)", ((double)totalGCTime / runtime) * (double)100);
       if (statusthread != null && statusthread.trackJVMStats()) {
@@ -882,18 +881,6 @@ public class Client
         //System.out.println("["+name+"]=["+value+"]");
         argindex++;
       }
-      else if (args[argindex].compareTo("-benchmarkname")==0)
-      {
-        argindex++;
-        if (argindex>=args.length)
-        {
-          usageMessage();
-          System.out.println("Missing argument value for -benchmarkname.");
-          System.exit(0);
-        }
-        props.setProperty(BENCHMARK_NAME,args[argindex]);
-        argindex++;
-      }
       else
       {
         usageMessage();
@@ -987,7 +974,6 @@ public class Client
 
 
     warningthread.start();
-
 
     //set up MongoHandler
     String mTypeString = props.getProperty("measurementtype");
@@ -1122,7 +1108,7 @@ public class Client
         standardstatus=true;
       }
       int statusIntervalSeconds = Integer.parseInt(props.getProperty("status.interval","10"));
-      boolean trackJVMStats = props.getProperty(Measurements.MEASUREMENT_TRACK_JVM_PROPERTY,
+      boolean trackJVMStats = props.getProperty(Measurements.MEASUREMENT_TRACK_JVM_PROPERTY, 
           Measurements.MEASUREMENT_TRACK_JVM_PROPERTY_DEFAULT).equals("true");
       statusthread=new StatusThread(completeLatch,clients,label,standardstatus,statusIntervalSeconds,trackJVMStats);
       statusthread.start();
@@ -1210,7 +1196,6 @@ public class Client
       e.printStackTrace();
       System.exit(-1);
     }
-
 
     /* Closing MongoHandler thread */
     if(mTypeString.equals("frontend")) {

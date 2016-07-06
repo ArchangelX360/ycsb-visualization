@@ -42,16 +42,15 @@ public class Measurements {
     HDRHISTOGRAM_AND_RAW,
     TIMESERIES,
     RAW,
-    FRONTEND,
-    FRONTEND_RAW
+    FRONTEND
   }
 
   public static final String MEASUREMENT_TYPE_PROPERTY = "measurementtype";
   private static final String MEASUREMENT_TYPE_PROPERTY_DEFAULT = "hdrhistogram";
-
+  
   public static final String MEASUREMENT_INTERVAL = "measurement.interval";
   private static final String MEASUREMENT_INTERVAL_DEFAULT = "op";
-
+  
   public static final String MEASUREMENT_TRACK_JVM_PROPERTY = "measurement.trackjvm";
   public static final String MEASUREMENT_TRACK_JVM_PROPERTY_DEFAULT = "false";
 
@@ -146,26 +145,26 @@ public class Measurements {
   {
     switch (_measurementType)
     {
-      case HISTOGRAM:
-        return new OneMeasurementHistogram(name, _props);
-      case HDRHISTOGRAM:
-        return new OneMeasurementHdrHistogram(name, _props);
-      case HDRHISTOGRAM_AND_HISTOGRAM:
-        return new TwoInOneMeasurement(name,
-                new OneMeasurementHdrHistogram("Hdr"+name, _props),
-                new OneMeasurementHistogram("Bucket"+name, _props));
-      case HDRHISTOGRAM_AND_RAW:
-        return new TwoInOneMeasurement(name,
-                new OneMeasurementHdrHistogram("Hdr"+name, _props),
-                new OneMeasurementHistogram("Raw"+name, _props));
-      case TIMESERIES:
-        return new OneMeasurementTimeSeries(name, _props);
-      case RAW:
-        return new OneMeasurementRaw(name, _props);
+    case HISTOGRAM:
+      return new OneMeasurementHistogram(name, _props);
+    case HDRHISTOGRAM:
+      return new OneMeasurementHdrHistogram(name, _props);
+    case HDRHISTOGRAM_AND_HISTOGRAM:
+      return new TwoInOneMeasurement(name,
+              new OneMeasurementHdrHistogram("Hdr"+name, _props),
+              new OneMeasurementHistogram("Bucket"+name, _props));
+    case HDRHISTOGRAM_AND_RAW:
+      return new TwoInOneMeasurement(name,
+          new OneMeasurementHdrHistogram("Hdr"+name, _props),
+          new OneMeasurementRaw("Raw"+name, _props));
+    case TIMESERIES:
+      return new OneMeasurementTimeSeries(name, _props);
+    case RAW:
+      return new OneMeasurementRaw(name, _props);
       case FRONTEND:
         return new OneMeasurementFrontend(name, _props);
-      default:
-        throw new AssertionError("Impossible to be here. Dead code reached. Bugs?");
+    default:
+      throw new AssertionError("Impossible to be here. Dead code reached. Bugs?");
     }
   }
 
@@ -252,7 +251,7 @@ public class Measurements {
       OneMeasurement oldM = _opToMesurementMap.putIfAbsent(operation, m);
       if(oldM != null)
       {
-        m = oldM;
+          m = oldM;
       }
     }
     return m;
@@ -279,8 +278,8 @@ public class Measurements {
   public void reportStatus(final String operation, final Status status)
   {
     OneMeasurement m = _measurementInterval==1 ?
-            getOpIntendedMeasurement(operation) :
-            getOpMeasurement(operation);
+          getOpIntendedMeasurement(operation) :
+          getOpMeasurement(operation);
     m.reportStatus(status);
   }
 
@@ -322,4 +321,5 @@ public class Measurements {
   public ConcurrentHashMap<String, OneMeasurement> get_opToMesurementMap() {
     return _opToMesurementMap;
   }
+
 }

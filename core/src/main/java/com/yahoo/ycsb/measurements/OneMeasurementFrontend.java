@@ -17,14 +17,12 @@
 
 package com.yahoo.ycsb.measurements;
 
-import com.mongodb.bulk.InsertRequest;
 import com.yahoo.ycsb.frontend.FrontEndList;
 import com.yahoo.ycsb.measurements.exporter.MeasurementsExporter;
-import org.bson.*;
-import org.bson.types.ObjectId;
+import org.bson.Document;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Properties;
 
 /**
  * Record a series of measurements as raw data points without down sampling,

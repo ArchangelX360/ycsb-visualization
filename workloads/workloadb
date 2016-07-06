@@ -34,3 +34,5 @@ insertproportion=0
 
 requestdistribution=zipfian
 
+memcached.hosts=localhost
+

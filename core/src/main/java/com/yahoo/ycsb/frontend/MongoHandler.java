@@ -1,13 +1,15 @@
 package com.yahoo.ycsb.frontend;
 
-import com.mongodb.*;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
 import com.mongodb.client.MongoDatabase;
 import com.yahoo.ycsb.measurements.Measurements;
 import com.yahoo.ycsb.measurements.OneMeasurement;
 import com.yahoo.ycsb.measurements.OneMeasurementFrontend;
 import org.bson.Document;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -70,7 +72,6 @@ public class MongoHandler {
                     opToMesurementMap.get(operationType)).getPoints());
             int nextIndexToInsert = documents.getNextIndexToInsert();
             int end = documents.size();
-            System.err.println(end);
             ((OneMeasurementFrontend) opToMesurementMap.get(operationType)).getPoints().setNextIndexToInsert(end);
             MongoHandler.handleValues(documents.subList(nextIndexToInsert, end));
         }

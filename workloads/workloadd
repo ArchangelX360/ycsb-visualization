@@ -39,3 +39,5 @@ insertproportion=0.05
 
 requestdistribution=latest
 
+memcached.hosts=localhost
+
