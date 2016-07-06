@@ -1211,9 +1211,16 @@ public class Client
       System.exit(-1);
     }
 
+
     /* Closing MongoHandler thread */
     if(mTypeString.equals("frontend")) {
-      MongoHandler.getInstance().closeConnection();
+      try {
+        MongoHandler.getInstance().closeConnection();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+        System.err.println("Mongo handler forced to stop.");
+        System.exit(-1);
+      }
     }
 
     System.exit(0);

@@ -17,9 +17,11 @@
 
 package com.yahoo.ycsb.measurements;
 
+import com.mongodb.bulk.InsertRequest;
 import com.yahoo.ycsb.frontend.FrontEndList;
 import com.yahoo.ycsb.measurements.exporter.MeasurementsExporter;
-import org.bson.Document;
+import org.bson.*;
+import org.bson.types.ObjectId;
 
 import java.io.IOException;
 import java.util.*;
@@ -65,11 +67,11 @@ public class OneMeasurementFrontend extends OneMeasurement {
     }
 
     @Override
-    public void measure(int latency) {
-        points.add(new Document("num", points.size() + 1)
+    public synchronized void measure(int latency) {
+        points.add(new Document()
+                .append("num", points.size() + 1)
                 .append("latency", latency)
-                .append("operationType", super.getName())
-        );
+                .append("operationType", super.getName()));
     }
 
     @Override

@@ -1,6 +1,6 @@
 package com.yahoo.ycsb.frontend;
 
-import com.mongodb.MongoClient;
+import com.mongodb.*;
 import com.mongodb.client.MongoDatabase;
 import com.yahoo.ycsb.measurements.Measurements;
 import com.yahoo.ycsb.measurements.OneMeasurement;
@@ -49,7 +49,7 @@ public class MongoHandler {
                     System.err.println("Fetching points...");
                     MongoHandler.fetchPoints(Measurements.getMeasurements().get_opToMesurementMap());
                 },
-                INITIAL_DELAY, MongoHandler.PERIOD, TimeUnit.MILLISECONDS);
+                MongoHandler.INITIAL_DELAY, MongoHandler.PERIOD, TimeUnit.MILLISECONDS);
     }
 
     private void initConnection() {
@@ -61,10 +61,6 @@ public class MongoHandler {
     private static void handleValues(List<Document> documents) {
         MongoHandler mH = MongoHandler.getInstance();
         MongoDatabase db = MongoHandler.getInstance().db;
-        while (documents.size() > 1000) {
-            db.getCollection(mH.collectionName).insertMany(documents.subList(0, 1000));
-            documents = documents.subList(1000, documents.size());
-        }
         db.getCollection(mH.collectionName).insertMany(documents);
     }
 
@@ -75,13 +71,14 @@ public class MongoHandler {
                     opToMesurementMap.get(operationType)).getPoints());
             int nextIndexToInsert = documents.getNextIndexToInsert();
             int end = documents.size();
+            System.err.println(end);
             ((OneMeasurementFrontend) opToMesurementMap.get(operationType)).getPoints().setNextIndexToInsert(end);
             MongoHandler.handleValues(documents.subList(nextIndexToInsert, end));
         }
         System.err.println("Points stored.");
     }
 
-    public void closeConnection() {
+    public void closeConnection() throws InterruptedException {
         // closes the DB for the thread of the executor
         executor.execute(() -> {
             System.err.println("Fetching last points...");
@@ -89,11 +86,7 @@ public class MongoHandler {
         });
         System.err.println("Shutting down DB hook...");
         executor.shutdown();
-        try {
-            executor.awaitTermination(Integer.MAX_VALUE, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
     }
 
 }
