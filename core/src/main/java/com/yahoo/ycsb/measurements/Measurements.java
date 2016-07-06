@@ -120,10 +120,6 @@ public class Measurements {
     {
       _measurementType = MeasurementType.FRONTEND;
     }
-    else if (mTypeString.equals("frontendraw"))
-    {
-      _measurementType = MeasurementType.FRONTEND_RAW;
-    }
     else {
       throw new IllegalArgumentException("unknown "+MEASUREMENT_TYPE_PROPERTY+"="+mTypeString);
     }
