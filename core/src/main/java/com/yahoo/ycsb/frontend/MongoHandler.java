@@ -22,10 +22,9 @@ public class MongoHandler {
     private static final int INITIAL_DELAY = 200;
 
     // TODO : extract these parameters in workloads
-    private static final int PERIOD = 5000;
+    private static final int PERIOD = 5000; // Storage process interval
     private static final String DB_NAME = "dbMeasurements";
-    private static final String DB_HOST = "localhost";
-    private static final int DB_PORT = 27017;
+    private static final String DB_URI = "mongodb://localhost:27017/";
 
     private static final MongoHandler INSTANCE = new MongoHandler();
 
@@ -53,7 +52,7 @@ public class MongoHandler {
     }
 
     private void initConnection() {
-        mongoClient = new MongoClient(MongoHandler.DB_HOST, MongoHandler.DB_PORT);
+        mongoClient = new MongoClient(new MongoClientURI(MongoHandler.DB_URI));
         db = mongoClient.getDatabase(MongoHandler.DB_NAME);
         db.getCollection(collectionName).createIndex(new Document("num", 1));
     }

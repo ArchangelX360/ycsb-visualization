@@ -50,11 +50,14 @@ To build a single database binding:
 YCSB visualisation
 --------------------
 
-#### New parameters
+#### New parameter & measurement
 
-We added two parameters to YCSB:
+We added one parameter to YCSB:
 
-* **benchmarkname=my_bench_name** is the name of the benchmark's table in the storage database. Be careful, if you use this name for two different benchmarks, the result of the second will be considered as new results for the first one.
+* **benchmarkname=<my_bench_name>** where "my_bench_name" is the name of the benchmark's table in the storage database. Be careful, if you use this name for two different benchmarks, the result of the second will be considered as new results for the first one.
+
+And we created another type of measurement:
+
 * **measurementtype=frontend** will activate the frontend DB hook for measurement and allows the graph visualisation
 
 #### Storage database
@@ -62,9 +65,9 @@ We added two parameters to YCSB:
 In the _com.yahoo.ycsb.frontend.MongoHandler_ class you will find MongoDB parameters for YCSB:
 
 ``` java
-    private static final String DB_NAME = "db_name";
-    private static final String DB_HOST = "localhost";
-    private static final int DB_PORT = 27017;
+    private static final int PERIOD = 5000; // Storage process interval
+    private static final String DB_NAME = "your_db_name";
+    private static final String DB_URI = "mongodb://localhost:27017/";
 ```
 
 For now, only local MongoDB have been tested. But it should work fine with a remote one.
