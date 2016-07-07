@@ -27,6 +27,7 @@ public class MongoHandler {
     private static final int PERIOD = 5000; // Storage process interval
     private static final String DB_NAME = "dbMeasurements";
     private static final String DB_URI = "mongodb://localhost:27017/";
+    private String countersCollectionName = "counters";
 
     private static final MongoHandler INSTANCE = new MongoHandler();
 
@@ -59,10 +60,38 @@ public class MongoHandler {
         db.getCollection(collectionName).createIndex(new Document("num", 1));
     }
 
-    private static void handleValues(List<Document> documents) {
+    private static void createCountersCollection(String operationType) {
         MongoHandler mH = MongoHandler.getInstance();
-        MongoDatabase db = MongoHandler.getInstance().db;
-        db.getCollection(mH.collectionName).insertMany(documents);
+        Document document = new Document()
+                .append("collection", mH.collectionName)
+                .append("operationType", operationType)
+                .append("seq", 0);
+        mH.db.getCollection("counters").insertOne(document);
+    }
+
+    private static Object getNextSequence(String collectionName, String operationType) {
+        MongoHandler mH = MongoHandler.getInstance();
+        Document searchQuery = new Document("collection", collectionName).append("operationType", operationType);
+        Document increase = new Document("seq", 1);
+        Document updateQuery = new Document("$inc", increase);
+        Document result =  mH.db.getCollection(mH.countersCollectionName).findOneAndUpdate(searchQuery, updateQuery);
+        return result.get("seq");
+    }
+
+    private static void handleValues(List<Document> documents, String operationType) {
+        MongoHandler mH = MongoHandler.getInstance();
+
+        Document counter = mH.db.getCollection(mH.countersCollectionName)
+                .find(new Document("collection", mH.collectionName).append("operationType", operationType))
+                .first();
+
+        if (counter == null) {
+            MongoHandler.createCountersCollection(operationType);
+        }
+        for (Document d : documents) {
+            d.append("num", MongoHandler.getNextSequence(mH.collectionName, operationType));
+            mH.db.getCollection(mH.collectionName).insertOne(d);
+        }
     }
 
     private static void fetchPoints(Map<String, OneMeasurement> opToMesurementMap) {
@@ -73,7 +102,7 @@ public class MongoHandler {
             int nextIndexToInsert = documents.getNextIndexToInsert();
             int end = documents.size();
             ((OneMeasurementFrontend) opToMesurementMap.get(operationType)).getPoints().setNextIndexToInsert(end);
-            MongoHandler.handleValues(documents.subList(nextIndexToInsert, end));
+            MongoHandler.handleValues(documents.subList(nextIndexToInsert, end), operationType);
         }
         System.err.println("Points stored.");
     }
