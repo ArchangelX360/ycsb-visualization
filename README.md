@@ -80,22 +80,18 @@ YCSB visualisation
 
 #### New parameter & measurement
 
-We added one parameter to YCSB:
+We added some parameters to YCSB:
 
-* **benchmarkname=<my_bench_name>** where "my_bench_name" is the name of the benchmark's table in the storage database. Be careful, if you use this name for two different benchmarks, the result of the second will be considered as new results for the first one.
+* **frontend.collection.benchmark=<my_bench_name>** where "my_bench_name" is the name of the benchmark's collection in the storage database. Be careful, if you use this name for two different benchmarks, the result of the second will be considered as new results for the first one.
+* **frontend.collection.counters=<my_counters_collection_name>** where "my_counters_collection_name" is the name of the counters collection of the storage database. One you chose one, try not to change it because you will have to reconfigure your client depending on which benchmark you want to watch.
+* **frontend.db.uri=<my_db_uri>** where "my_db_uri" is the MongoDB URI without the database name.
+* **frontend.db.name=<my_db_name>** where "my_db_name" is the name of the MongoDB Database where to store benchmark results.
+* **frontend.frequency=<my_frequency>** where "my_frequency" is the number of milliseconds between two storage actions in MongoDB. (5000 by default)
 
-And we created another type of measurement:
+All these parameters have default values thus are not mandatory.
+
+We also created another type of measurement:
 
 * **measurementtype=frontend** will activate the frontend DB hook for measurement and allows the graph visualisation
 
-#### Storage database
-
-In the _com.yahoo.ycsb.frontend.MongoHandler_ class you will find MongoDB parameters for YCSB:
-
-``` java
-    private static final int PERIOD = 5000; // Storage process interval
-    private static final String DB_NAME = "your_db_name";
-    private static final String DB_URI = "mongodb://localhost:27017/";
-```
-
-For now, only local MongoDB have been tested. But it should work fine with a remote one.
+Setting the measurementtype to "frontend" will launch the whole DB storage process

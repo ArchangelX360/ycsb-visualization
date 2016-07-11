@@ -36,3 +36,5 @@ insertproportion=0
 requestdistribution=zipfian
 
 memcached.hosts=localhost
+measurementtype=frontend
+db=com.yahoo.ycsb.db.MemcachedClient

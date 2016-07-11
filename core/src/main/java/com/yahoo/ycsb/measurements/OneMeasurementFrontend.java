@@ -67,8 +67,8 @@ public class OneMeasurementFrontend extends OneMeasurement {
     @Override
     public synchronized void measure(int latency) {
         points.add(new Document()
-                .append("latency", latency)
-                .append("operationType", super.getName()));
+                .append("measure", latency)
+                .append("label", super.getName()));
     }
 
     @Override

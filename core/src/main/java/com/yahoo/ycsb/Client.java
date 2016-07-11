@@ -24,14 +24,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -57,10 +51,10 @@ class StatusThread extends Thread
 
   /** Stores the measurements for the run. */
   private final Measurements _measurements;
-  
+
   /** Whether or not to track the JVM stats per run */
   private final boolean _trackJVMStats;
-  
+
   /** The clients that are running. */
   private final List<ClientThread> _clients;
 
@@ -94,7 +88,7 @@ class StatusThread extends Thread
   {
     this(completeLatch, clients, label, standardstatus, statusIntervalSeconds, false);
   }
-  
+
   /**
    * Creates a new StatusThread.
    *
@@ -117,7 +111,7 @@ class StatusThread extends Thread
     _measurements = Measurements.getMeasurements();
     _trackJVMStats = trackJVMStats;
   }
-  
+
   /**
    * Run and periodically report status.
    */
@@ -137,7 +131,7 @@ class StatusThread extends Thread
       long nowMs=System.currentTimeMillis();
 
       lastTotalOps = computeStats(startTimeMs, startIntervalMs, nowMs, lastTotalOps);
-      
+
       if (_trackJVMStats) {
         measureJVM();
       }
@@ -248,9 +242,9 @@ class StatusThread extends Thread
       _maxThreads = threads;
     }
     _measurements.measure("THREAD_COUNT", threads);
-    
+
     // TODO - once measurements allow for other number types, switch to using
-    // the raw bytes. Otherwise we can track in MB to avoid negative values 
+    // the raw bytes. Otherwise we can track in MB to avoid negative values
     // when faced with huge heaps.
     final int usedMem = Utils.getUsedMemoryMegaBytes();
     if (usedMem < _minUsedMem) {
@@ -260,7 +254,7 @@ class StatusThread extends Thread
       _maxUsedMem = usedMem;
     }
     _measurements.measure("USED_MEM_MB", usedMem);
-    
+
     // Some JVMs may not implement this feature so if the value is less than
     // zero, just ommit it.
     final double systemLoad = Utils.getSystemLoadAverage();
@@ -274,7 +268,7 @@ class StatusThread extends Thread
         _minLoadAvg = systemLoad;
       }
     }
-     
+
     final long gcs = Utils.getGCTotalCollectionCount();
     _measurements.measure("GCS", (int)(gcs - lastGCCount));
     final long gcTime = Utils.getGCTotalTime();
@@ -282,32 +276,32 @@ class StatusThread extends Thread
     lastGCCount = gcs;
     lastGCTime = gcTime;
   }
-  
+
   /** @return The maximum threads running during the test. */
   public int getMaxThreads() {
     return _maxThreads;
   }
-  
+
   /** @return The minimum threads running during the test. */
   public int getMinThreads() {
     return _minThreads;
   }
-  
+
   /** @return The maximum memory used during the test. */
   public long getMaxUsedMem() {
     return _maxUsedMem;
   }
-  
+
   /** @return The minimum memory used during the test. */
   public long getMinUsedMem() {
     return _minUsedMem;
   }
-  
+
   /** @return The maximum load average during the test. */
   public double getMaxLoadAvg() {
     return _maxLoadAvg;
   }
-  
+
   /** @return The minimum load average during the test. */
   public double getMinLoadAvg() {
     return _minLoadAvg;
@@ -526,7 +520,7 @@ class ClientThread implements Runnable
       _measurements.setIntendedStartTimeNs(deadline);
     }
   }
-  
+
   /**
    * the total amount of work this thread is still expected to do
    */
@@ -605,9 +599,13 @@ public class Client
   public static final String DO_TRANSACTIONS_PROPERTY = "dotransactions";
 
   /**
-   * The frontend properties class to be used.
+   * The frontend properties.
    */
-  public static final String BENCHMARK_NAME="benchmarkname";
+  public static final String BENCHMARK_NAME="frontend.collection.benchmark";
+  public static final String COUNTERS_COLLECTION_NAME ="frontend.collection.counters";
+  public static final String DB_URI="frontend.db.uri";
+  public static final String DB_NAME="frontend.db.name";
+  public static final String FETCH_FREQUENCY ="frontend.frequency";
 
   /** An optional thread used to track progress and measure JVM stats. */
   private static StatusThread statusthread = null;
@@ -702,7 +700,7 @@ public class Client
       exporter.write("OVERALL", "RunTime(ms)", runtime);
       double throughput = 1000.0 * (opcount) / (runtime);
       exporter.write("OVERALL", "Throughput(ops/sec)", throughput);
-      
+
       final Map<String, Long[]> gcs = Utils.getGCStatst();
       long totalGCCount = 0;
       long totalGCTime = 0;
@@ -714,7 +712,7 @@ public class Client
         totalGCTime += entry.getValue()[1];
       }
       exporter.write("TOTAL_GCs", "Count", totalGCCount);
-      
+
       exporter.write("TOTAL_GC_TIME", "Time(ms)", totalGCTime);
       exporter.write("TOTAL_GC_TIME_%", "Time(%)", ((double)totalGCTime / runtime) * (double)100);
       if (statusthread != null && statusthread.trackJVMStats()) {
@@ -981,7 +979,20 @@ public class Client
       mTypeString = "";
     }
     if(mTypeString.equals("frontend")) {
-      MongoHandler.getInstance().setCollectionName(props.getProperty(BENCHMARK_NAME));
+        String benchmarkName = props.getProperty(BENCHMARK_NAME) != null ?
+                props.getProperty(BENCHMARK_NAME) : "unamed" + System.currentTimeMillis();
+        String countersCollectionName = props.getProperty(COUNTERS_COLLECTION_NAME) != null ?
+                props.getProperty(COUNTERS_COLLECTION_NAME) : "counters";
+        String dbURI = props.getProperty(DB_URI) != null ?
+                props.getProperty(DB_URI) : "mongodb://localhost:27017/";
+        String dbName = props.getProperty(DB_NAME) != null ?
+                props.getProperty(DB_NAME) : "dbMeasurements";
+        int period = props.getProperty(FETCH_FREQUENCY) != null ?
+                Integer.parseInt(props.getProperty(FETCH_FREQUENCY)) : 5000;
+        // TODO : catch exception ?
+        MongoHandler.getInstance().setCollectionName(benchmarkName);
+        MongoHandler.getInstance().setCountersCollectionName(countersCollectionName);
+        MongoHandler.getInstance().initConnection(dbURI, dbName, period);
     }
 
     //set up measurements
@@ -1108,7 +1119,7 @@ public class Client
         standardstatus=true;
       }
       int statusIntervalSeconds = Integer.parseInt(props.getProperty("status.interval","10"));
-      boolean trackJVMStats = props.getProperty(Measurements.MEASUREMENT_TRACK_JVM_PROPERTY, 
+      boolean trackJVMStats = props.getProperty(Measurements.MEASUREMENT_TRACK_JVM_PROPERTY,
           Measurements.MEASUREMENT_TRACK_JVM_PROPERTY_DEFAULT).equals("true");
       statusthread=new StatusThread(completeLatch,clients,label,standardstatus,statusIntervalSeconds,trackJVMStats);
       statusthread.start();
