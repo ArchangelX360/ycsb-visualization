@@ -95,3 +95,18 @@ We also created another type of measurement:
 * **measurementtype=frontend** will activate the frontend DB hook for measurement and allows the graph visualisation
 
 Setting the measurementtype to "frontend" will launch the whole DB storage process
+
+#### Custom DB adapter
+
+// **TODO**
+
+#### Limitations
+
+##### Makes YCSB a bit slower
+
+// **TODO: determine how much & fill this !**
+
+##### Database
+
+The storage process, as it is implemented, should work regardless of the database.
+However, it has been tested with memcached only.
