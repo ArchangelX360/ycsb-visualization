@@ -9,18 +9,16 @@ import org.bson.Document;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Handles the periodically fill of our storage DB for the frontend.
  */
 public class MongoHandler {
 
-    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
 
-    private static final int INITIAL_DELAY = 200;
+    private static final int INITIAL_DELAY = 0;
     private static final MongoHandler INSTANCE = new MongoHandler();
 
     public static MongoHandler getInstance() {
@@ -52,9 +50,14 @@ public class MongoHandler {
             db.getCollection(collectionName).createIndex(new Document("num", 1));
         });
         executor.scheduleAtFixedRate(() -> {
-            System.err.println("Fetching points...");
-            MongoHandler.fetchPoints(Measurements.getMeasurements().get_opToMesurementMap());
+            // Fail safe system that add task if no more tasks in the queue
+            if (executor.getQueue().size() <= 0) {
+                executor.execute(() -> MongoHandler.fetchPoints(Measurements.getMeasurements().get_opToMesurementMap()));
+            }
         }, MongoHandler.INITIAL_DELAY, fetchFrequency, TimeUnit.MILLISECONDS);
+        // Two fetching tasks to avoid empty queue gap
+        executor.execute(() -> MongoHandler.fetchPoints(Measurements.getMeasurements().get_opToMesurementMap()));
+        executor.execute(() -> MongoHandler.fetchPoints(Measurements.getMeasurements().get_opToMesurementMap()));
     }
 
     private static void createCountersCollection(String operationType) {
@@ -93,16 +96,23 @@ public class MongoHandler {
     }
 
     private static void fetchPoints(Map<String, OneMeasurement> opToMesurementMap) {
-        for (String operationType : opToMesurementMap.keySet()) {
-            // FIXME: copy done here... That's bad but I can't figure out a other way to have consistency for now.
-            FrontEndList<Document> documents = new FrontEndList<>(((OneMeasurementFrontend)
-                    opToMesurementMap.get(operationType)).getPoints());
-            int nextIndexToInsert = documents.getNextIndexToInsert();
-            int end = documents.size();
-            ((OneMeasurementFrontend) opToMesurementMap.get(operationType)).getPoints().setNextIndexToInsert(end);
-            MongoHandler.handleValues(documents.subList(nextIndexToInsert, end), operationType);
+        try {
+            System.err.println("Fetching points...");
+            for (String operationType : opToMesurementMap.keySet()) {
+                // FIXME: copy done here... That's bad but I can't figure out a other way to have consistency for now.
+                FrontEndList<Document> documents = new FrontEndList<>(((OneMeasurementFrontend)
+                        opToMesurementMap.get(operationType)).getPoints());
+                int nextIndexToInsert = documents.getNextIndexToInsert();
+                int end = documents.size();
+                ((OneMeasurementFrontend) opToMesurementMap.get(operationType)).getPoints().setNextIndexToInsert(end);
+                MongoHandler.handleValues(documents.subList(nextIndexToInsert, end), operationType);
+            }
+            System.err.println("Points stored.");
+        } finally {
+            // Task renew
+            MongoHandler.getInstance().executor.execute(() ->
+                    MongoHandler.fetchPoints(Measurements.getMeasurements().get_opToMesurementMap()));
         }
-        System.err.println("Points stored.");
     }
 
     public void closeConnection() throws InterruptedException {
