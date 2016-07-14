@@ -39,6 +39,7 @@ LICENSE file.
       <fileMode>0755</fileMode>
       <includes>
         <include>ycsb*</include>
+        <include>bindings.properties</include>
       </includes>
     </fileSet>
     <fileSet>
