@@ -76,7 +76,22 @@ To build a single database binding:
 
 
 YCSB visualisation
---------------------
+------------------
+
+#### Presentation
+
+This YCSB module extension stores YCSB measurements in real-time into a MongoDB database.
+It is designed to be used with [Web Dataset Visualizer](https://bitbucket.org/r0bcrane/ycsb-visualization) out of the box.
+
+<p align="center">
+  <img src="/doc/images/archi-software.png" />
+</p>
+<p align="center">
+  <b>Place in the overall project architecture</b>
+</p>
+
+This module provides a new thread that periodically checks if there is new measurements and if any stores them into a storage DB.
+We created a new MeasurementType "frontend" which is using a list of MongoDB Documents instead of (operation, latency) couples. Choosing this MeasurementType will automatically launch the whole DB storage process. The MongoDB connexion will be initialize based on specified parameters or the default local ones and the periodic fetching process will be started.
 
 #### New parameter & measurement
 
@@ -90,15 +105,9 @@ We added some parameters to YCSB:
 
 All these parameters have default values thus are not mandatory.
 
-We also created another type of measurement:
+As we said above, we also created another type of measurement:
 
 * **measurementtype=frontend** will activate the frontend DB hook for measurement and allows the graph visualisation
-
-Setting the measurementtype to "frontend" will launch the whole DB storage process
-
-#### Custom DB adapter
-
-// **TODO**
 
 #### Limitations
 
@@ -108,5 +117,5 @@ Setting the measurementtype to "frontend" will launch the whole DB storage proce
 
 ##### Database
 
-The storage process, as it is implemented, should work regardless of the database.
+The storage process, as it is implemented, should work regardless of the database thus you can use your custom adapters.
 However, it has been tested with memcached only.
