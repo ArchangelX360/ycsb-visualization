@@ -91,7 +91,8 @@ It is designed to be used with [Web Dataset Visualizer](https://bitbucket.org/r0
 </p>
 
 This module provides a new thread that periodically checks if there is new measurements and if any stores them into a storage DB.
-We created a new MeasurementType "frontend" which is using a list of MongoDB Documents instead of (operation, latency) couples. Choosing this MeasurementType will automatically launch the whole DB storage process. The MongoDB connexion will be initialize based on specified parameters or the default local ones and the periodic fetching process will be started.
+We created a new MeasurementType "frontend" which is using a concurrent map of lists of MongoDB Documents instead of basic(operation, latency) couples. 
+Choosing this MeasurementType will automatically launch the whole DB storage process. The MongoDB connexion will be initialized based on specified parameters or the default local ones and the periodic fetching process will be started.
 
 #### New parameter & measurement
 
@@ -103,7 +104,7 @@ We added some parameters to YCSB:
 * **frontend.db.name=<my_db_name>** where "my_db_name" is the name of the MongoDB Database where to store benchmark results.
 * **frontend.frequency=<my_frequency>** where "my_frequency" is the number of milliseconds between two storage actions in MongoDB. (5000 by default)
 
-All these parameters have default values thus are not mandatory.
+All the above parameters have default values thus are not mandatory.
 
 As we said above, we also created another type of measurement:
 
