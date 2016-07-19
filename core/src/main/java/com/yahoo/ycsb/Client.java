@@ -990,9 +990,7 @@ public class Client
         int period = props.getProperty(FETCH_FREQUENCY) != null ?
                 Integer.parseInt(props.getProperty(FETCH_FREQUENCY)) : 5000;
         // TODO : catch exception ?
-        MongoHandler.getInstance().setCollectionName(benchmarkName);
-        MongoHandler.getInstance().setCountersCollectionName(countersCollectionName);
-        MongoHandler.getInstance().initConnection(dbURI, dbName, period);
+        MongoHandler.getInstance().initHandler(dbURI, dbName, period, benchmarkName, countersCollectionName);
     }
 
     //set up measurements

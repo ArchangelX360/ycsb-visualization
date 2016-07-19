@@ -17,11 +17,13 @@
 
 package com.yahoo.ycsb.measurements;
 
-import com.yahoo.ycsb.frontend.FrontEndList;
+import com.yahoo.ycsb.frontend.FrontEndConcurrentMap;
+import com.yahoo.ycsb.frontend.MongoHandler;
 import com.yahoo.ycsb.measurements.exporter.MeasurementsExporter;
 import org.bson.Document;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -32,43 +34,36 @@ import java.util.Properties;
  */
 public class OneMeasurementFrontend extends OneMeasurement {
 
-    private FrontEndList<Document> points;
+    private FrontEndConcurrentMap points;
+
+    private int currentNum = 0;
+    private int offset = 0;
 
     OneMeasurementFrontend(String name, Properties props) {
         super(name);
-        int operationToDo = 10;
+        points = new FrontEndConcurrentMap();
 
-        if (!Boolean.parseBoolean(props.getProperty("DO_TRANSACTIONS_PROPERTY"))) {
-            boolean hasInsertProp = props.containsKey("INSERT_COUNT_PROPERTY");
-            boolean hasRecordProp = props.containsKey("RECORD_COUNT_PROPERTY");
-            boolean hasBoth = hasInsertProp && hasRecordProp;
-            Integer insert_count_property = 0;
-            Integer record_count_property = 0;
-
-            if (hasInsertProp) {
-                insert_count_property = Integer.parseInt(props.getProperty("INSERT_COUNT_PROPERTY"));
-                operationToDo = insert_count_property;
-            }
-            if (hasRecordProp) {
-                record_count_property = Integer.parseInt(props.getProperty("RECORD_COUNT_PROPERTY"));
-                operationToDo = record_count_property;
-            }
-            if (hasBoth) {
-                operationToDo = Math.min(insert_count_property, record_count_property);
-            }
-        } else {
-            if (props.containsKey("OPERATION_COUNT_PROPERTY")) {
-                operationToDo = Integer.parseInt(props.getProperty("OPERATION_COUNT_PROPERTY"));
+        String operationType = super.getName();
+        while (!MongoHandler.getInstance().isHandlerReady()) {
+            try {
+                System.err.println("Handler not ready yet");
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-        points = new FrontEndList<>(operationToDo);
+        Map<String, Integer> operationTypeToLastNum = MongoHandler.getInstance().getOperationTypeToLastInsertedNum();
+        operationTypeToLastNum.putIfAbsent(operationType, -1);
+        offset = operationTypeToLastNum.get(operationType) + 1;
     }
 
     @Override
     public synchronized void measure(int latency) {
-        points.add(new Document()
+        points.addDocument(new Document()
+                .append("num", currentNum + offset)
                 .append("measure", latency)
                 .append("label", super.getName()));
+        ++currentNum;
     }
 
     @Override
@@ -78,10 +73,10 @@ public class OneMeasurementFrontend extends OneMeasurement {
 
     @Override
     public synchronized String getSummary() {
-        return "No summary available with this measurement type.";
+        return System.lineSeparator() + "No summary available with this measurement type.";
     }
 
-    public FrontEndList<Document> getPoints() {
+    public FrontEndConcurrentMap getPoints() {
         return points;
     }
 
