@@ -41,7 +41,7 @@ public class MongoHandler {
      */
     private String countersCollectionName;
 
-    private Map<String, Integer> operationTypeToLastInsertedNum = new HashMap<>();
+    private Map<String, Integer> operationTypeToLastInsertedNum = new ConcurrentHashMap<>();
 
     private MongoHandler() {
     }
