@@ -53,12 +53,11 @@ public class OneMeasurementFrontend extends OneMeasurement {
             }
         }
         Map<String, Integer> operationTypeToLastNum = MongoHandler.getInstance().getOperationTypeToLastInsertedNum();
-        Integer v = operationTypeToLastNum.get(operationType);
-        if (v == null) {
-            v = -1;
-            operationTypeToLastNum.put(operationType, v);
+        Integer lastNum = operationTypeToLastNum.putIfAbsent(operationType, -1);
+        if (lastNum == null) {
+            lastNum = -1;
         }
-        offset = v + 1;
+        offset = lastNum + 1;
     }
 
     @Override
