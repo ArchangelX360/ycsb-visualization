@@ -29,7 +29,7 @@ storage_uri=${5}
 storage_db_name="dbMeasurements"
 storage_counters_collection_name="counters"
 ycsb_root="/home/titouan/Documents/ycsb-web-app/ycsb-0.11.1-custom-release/"
-unique_id="results-I${1}-W${3}-M${4}-T${2}-S${5}"
+unique_id="I${1}-W${3}-M${4}-T${2}-S${5}"
 output_file="/home/titouan/Documents/ycsb-web-app/public/evaluations/${unique_id}.json"
 
 
