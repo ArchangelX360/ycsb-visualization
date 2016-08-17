@@ -12,7 +12,7 @@ ProgressBar() {
 
 launch() {
     # Launching benchmark
-    output="$(${4}bin/ycsb ${2} memcached -P ${4}workloads/${3} -p measurementtype=${1} -p threadcount=${6} -p frontend.collection.benchmark=${5} -p memcached.hosts=${7} -p frontend.db.uri=mongodb://${8}/ -p frontend.db.name=${9} -p frontend.collection.counters=${10} -s)"
+    output="$(${4}bin/ycsb ${2} memcached -P ${4}workloads/${3} -p recordcount=${11} -p operationcount=${11} -p measurementtype=${1} -p threadcount=${6} -p frontend.collection.benchmark=${5} -p memcached.hosts=${7} -p frontend.db.uri=mongodb://${8}/ -p frontend.db.name=${9} -p frontend.collection.counters=${10} -s)"
     res="$(echo ${output} | sed 's/.* Throughput(ops\/sec), \([0-9.,]*\).*/\1/g')"
 }
 
@@ -24,12 +24,13 @@ memcached_host=${4}
 memcached_address=$(echo ${memcached_host} | cut -f1 -d:)
 memcached_port=$(echo ${memcached_host} | cut -f2 -d:)
 storage_uri=${5}
+point_number=${6}
 
 # Custom parameters
 storage_db_name="dbMeasurements"
 storage_counters_collection_name="counters"
 ycsb_root="/home/titouan/Documents/ycsb-web-app/ycsb-0.11.1-custom-release/"
-unique_id="I${1}-W${3}-M${4}-T${2}-S${5}"
+unique_id="I${1}-W${6}${3}-M${4}-T${2}-S${5}"
 output_file="/home/titouan/Documents/ycsb-web-app/public/evaluations/${unique_id}.json"
 
 
@@ -54,13 +55,13 @@ while [ "$i" -lt "$adjusted_iterations" ]
 
     FRONTEND_CYCLE_START=$(date +%s.%N)
 
-    launch frontend load ${workload} ${ycsb_root} ${unique_id}bash${i} ${thread_count} ${memcached_host} ${storage_uri} ${storage_db_name} ${storage_counters_collection_name} >> /dev/null 2>&1
+    launch frontend load ${workload} ${ycsb_root} ${unique_id}bash${i} ${thread_count} ${memcached_host} ${storage_uri} ${storage_db_name} ${storage_counters_collection_name} ${point_number} >> /dev/null 2>&1
     current_res_frontend_load=$res
     res_frontend_load=$(echo "$res_frontend_load + $res" | bc)
 
     ProgressBar $(($i + 5)) ${total_adjusted_iterations}
 
-    launch frontend run ${workload} ${ycsb_root} ${unique_id}bash${i} ${thread_count} ${memcached_host} ${storage_uri} ${storage_db_name} ${storage_counters_collection_name} >> /dev/null 2>&1
+    launch frontend run ${workload} ${ycsb_root} ${unique_id}bash${i} ${thread_count} ${memcached_host} ${storage_uri} ${storage_db_name} ${storage_counters_collection_name} ${point_number} >> /dev/null 2>&1
     current_res_frontend_run=$res
     res_frontend_run=$(echo "$res_frontend_run + $res" | bc)
 
@@ -90,13 +91,13 @@ while [ "$i" -lt "${total_adjusted_iterations}" ]
 
     RAW_CYCLE_START=$(date +%s.%N)
 
-    launch raw load ${workload} ${ycsb_root} ${unique_id}bash${i} ${thread_count} ${memcached_host} ${storage_uri} ${storage_db_name} ${storage_counters_collection_name} >> /dev/null 2>&1
+    launch raw load ${workload} ${ycsb_root} ${unique_id}bash${i} ${thread_count} ${memcached_host} ${storage_uri} ${storage_db_name} ${storage_counters_collection_name} ${point_number} >> /dev/null 2>&1
     current_res_raw_load=$res
     res_raw_load=$(echo "$res_raw_load + $res" | bc)
 
     ProgressBar $(($i + 5)) ${total_adjusted_iterations}
 
-    launch raw run ${workload} ${ycsb_root} ${unique_id}bash${i} ${thread_count} ${memcached_host} ${storage_uri} ${storage_db_name} ${storage_counters_collection_name} >> /dev/null 2>&1
+    launch raw run ${workload} ${ycsb_root} ${unique_id}bash${i} ${thread_count} ${memcached_host} ${storage_uri} ${storage_db_name} ${storage_counters_collection_name} ${point_number} >> /dev/null 2>&1
     current_res_raw_run=$res
     res_raw_run=$(echo "$res_raw_run + $res" | bc)
 
@@ -127,7 +128,7 @@ average_raw_run=$(echo "$res_raw_run / ${iterations}" | bc)
 
 percent_average_load=$(echo "$average_frontend_load * 100 / $average_raw_load" | bc)
 percent_average_run=$(echo "$average_frontend_run * 100 / $average_raw_run" | bc)
-percent_execution_time=$(echo "${RAW_EXECUTION_TIME} * 100 / ${FRONTEND_EXECUTION_TIME}" | bc)
+percent_execution_time=$(echo "${FRONTEND_EXECUTION_TIME} * 100 / ${RAW_EXECUTION_TIME}" | bc)
 
 echo "    ]," >> ${output_file}
 echo "    \"results\": {" >> ${output_file}

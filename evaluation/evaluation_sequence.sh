@@ -1,21 +1,25 @@
 #!/bin/bash
 
+ITERATION=20
 
-ITERATION=50
-
-MEMCACHED_URIS=( 127.0.0.1:11211 141.76.44.145:11211 )
-MONGO_URIS=( 127.0.0.1:27017 141.76.44.145:27017 )
-WORKLOADS=( a1k a5k a10k a20k a50k a100k a1000k a2000k a3000k a4000k a5000k a10000k )
+workload=workloada
+MEMCACHED_URIS=( 127.0.0.1:11211 10.0.0.3:11211 )
+#MEMCACHED_URIS=( 127.0.0.1:11211 )
+MONGO_URIS=( 127.0.0.1:27017 10.0.0.3:27017 )
+#MONGO_URIS=( 127.0.0.1:27017 )
+POINTS=( 1000 2500 5000 7500 10000 15000 30000 45000 60000 75000 90000 105000 120000 135000 150000 200000 250000 300000 350000 400000 450000 500000 600000 700000 800000 900000 1000000)
 THREADS=( 1 4 )
+#THREADS=( 1 )
 MEASUREMENTS=( raw ) # No other measurement supported at the moment
 
-for workload in ${WORKLOADS[@]}; do
+#for workload in ${WORKLOADS[@]}; do
+for point in ${POINTS[@]}; do
     for mongo_uri in ${MONGO_URIS[@]}; do
         for memcached_uri in ${MEMCACHED_URIS[@]}; do
             for thread in ${THREADS[@]}; do
                 for measurement in ${MEASUREMENTS[@]}; do
-                    echo -e "\nLaunching : ${ITERATION} ${thread} ${workload} ${memcached_uri} ${mongo_uri}"
-                    ./evaluation_script.sh ${ITERATION} ${thread} ${workload} ${memcached_uri} ${mongo_uri}
+                    echo -e "\n$(date +"[%d-%m-%YT%T] ")Launching : ${ITERATION} ${thread} ${workload} ${memcached_uri} ${mongo_uri} ${point}"
+                    ./evaluation_script.sh ${ITERATION} ${thread} ${workload} ${memcached_uri} ${mongo_uri} ${point}
                 done
             done
         done
