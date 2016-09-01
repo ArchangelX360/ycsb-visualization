@@ -97,10 +97,12 @@ A local benchmarked database is drastically reducing performance, we recommand y
 We chose not to compare results with local benchmarked database as it is a rare YCSB user case.
 
 Using medians of 20 iterations in the range from 15k points benchmark to 1M points benchmark we are :
+
 * never under -6\%  for the both LOAD and RUN phase
 * never under -1\% for the both LOAD and RUN phase with remote storage (most common use case).
 
 Using minimum values of 20 iterations in the range from 30k points benchmark to 1M points benchmark we are :
+
 * never under -10\%  for the LOAD phase
 * never under -12\% for the RUN phase.
 
