@@ -98,13 +98,13 @@ We chose not to compare results with local benchmarked database as it is a rare 
 
 Using medians of 20 iterations in the range from 15k points benchmark to 1M points benchmark we are :
 
-* never under -6\%  for the both LOAD and RUN phase
-* never under -1\% for the both LOAD and RUN phase with remote storage (most common use case).
+* never under 6% slower for the both LOAD and RUN phase
+* never under 1% slower for the both LOAD and RUN phase with remote storage (most common use case).
 
 Using minimum values of 20 iterations in the range from 30k points benchmark to 1M points benchmark we are :
 
-* never under -10\%  for the LOAD phase
-* never under -12\% for the RUN phase.
+* never under 10% slower for the LOAD phase
+* never under 12% slower for the RUN phase.
 
 Below these values, results have a strong variation and no conclusion can be made. 
 This is not a problem for us as our extension module provide no added value for small benchmarks. 
