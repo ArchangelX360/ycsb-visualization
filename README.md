@@ -1,21 +1,3 @@
-<!--
-Copyright (c) 2010 Yahoo! Inc., 2012 - 2016 YCSB contributors.
-All rights reserved.
-
-Licensed under the Apache License, Version 2.0 (the "License"); you
-may not use this file except in compliance with the License. You
-may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-implied. See the License for the specific language governing
-permissions and limitations under the License. See accompanying
-LICENSE file.
--->
-
 Yahoo! Cloud System Benchmark (YCSB)
 ====================================
 
@@ -83,12 +65,9 @@ YCSB visualisation
 This YCSB module extension stores YCSB measurements in real-time into a MongoDB database.
 It is designed to be used with [Web Dataset Visualizer](https://bitbucket.org/r0bcrane/ycsb-visualization) out of the box.
 
-<p align="center">
-  <img src="/doc/images/archi-software.png" />
-</p>
-<p align="center">
-  <b>Place in the overall project architecture</b>
-</p>
+![Architecture photo with Storage DB and YCSB selected.](/doc/images/archi-software.png "Place in the overall project architecture")
+
+**Place in the overall project architecture**
 
 This module provides a new thread that periodically checks if there is new measurements and if any stores them into a storage DB.
 We created a new MeasurementType "frontend" which is using a concurrent map of lists of MongoDB Documents instead of basic(operation, latency) couples. 
