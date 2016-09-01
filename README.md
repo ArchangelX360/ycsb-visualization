@@ -110,6 +110,8 @@ Below these values, results have a strong variation and no conclusion can be mad
 This is not a problem for us as our extension module provide no added value for small benchmarks. 
 Indeed, they are too fast to take advantage of a real-time display.
 
+Sometimes our module is faster on Throughputs but has a larger execution time due to databases connexions and storage thread initialization and shutdown. We invite you to consult the report for more information.
+
 ##### Database
 
 The storage process, as it is implemented, should work regardless of the database thus you can use your custom adapters.
