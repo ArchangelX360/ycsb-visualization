@@ -67,7 +67,7 @@ It is designed to be used with [Web Dataset Visualizer](https://bitbucket.org/r0
 
 ![Architecture photo with Storage DB and YCSB selected.](/doc/images/archi-software.png "Place in the overall project architecture")
 
-**Place in the overall project architecture**
+*Place in the overall project architecture*
 
 This module provides a new thread that periodically checks if there is new measurements and if any stores them into a storage DB.
 We created a new MeasurementType "frontend" which is using a concurrent map of lists of MongoDB Documents instead of basic(operation, latency) couples. 
