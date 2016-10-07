@@ -13,7 +13,7 @@ Getting Started
 
     ```sh
     curl -O --location https://github.com/ArchangelX360/ycsb-visualization/releases/download/0.10.0-visualisation/ycsb-0.10.0-visualization-release.tar.gz
-    tar ycsb-0.10.0-visualization-release
+    tar ycsb-0.10.0-visualization-release.tar.gz
     cd ycsb-0.10.0-visualization-release
     ```
     
