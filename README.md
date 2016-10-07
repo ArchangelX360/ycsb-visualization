@@ -9,18 +9,18 @@ http://wiki.github.com/brianfrankcooper/YCSB/
 Getting Started
 ---------------
 
-1. Download the [latest release of YCSB](https://github.com/brianfrankcooper/YCSB/releases/latest):
+1. Download the [latest release of YCSB Visualization version](https://github.com/ArchangelX360/ycsb-visualization/releases/latest):
 
     ```sh
-    curl -O --location https://github.com/brianfrankcooper/YCSB/releases/download/0.10.0/ycsb-0.10.0.tar.gz
-    tar xfvz ycsb-0.10.0.tar.gz
-    cd ycsb-0.10.0
+    curl -O --location https://github.com/ArchangelX360/ycsb-visualization/releases/download/0.10.0-visualisation/ycsb-0.10.0-visualization-release.tar.gz
+    tar ycsb-0.10.0-visualization-release
+    cd ycsb-0.10.0-visualization-release
     ```
     
 2. Set up a database to benchmark. There is a README file under each binding 
    directory.
 
-3. Run YCSB command. 
+3. Run YCSB command (See YCSB visualisation for more info for the visualization). 
 
     On Linux:
     ```sh
